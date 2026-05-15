@@ -7,6 +7,7 @@ PDFs de referencia para o assistente:
 | `SOLAS - Convenção Internacional...pdf` | SOLAS |
 | `normam-201.pdf` | NORMAM 201 (Marinha do Brasil) |
 | `anexo_i_marpol.pdf` | MARPOL Anexo I |
+| `kratos-glossario.md` | Glossário operacional (cargas, nomenclatura) para o KRATOS |
 
 ## Gerar indice
 

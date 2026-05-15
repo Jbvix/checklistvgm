@@ -58,8 +58,11 @@ function buildInstructions() {
     "5. Quando couber, mencione licoes do MAIB de forma generica, sem inventar nome de navio ou data de acidente.",
     "6. Use trechos da base local como fonte principal; use busca na web para MAIB ou atualizacoes oficiais quando os trechos locais forem insuficientes.",
     "7. Itens sobre dalas/trapos/agua oleosa na Praca de Maquinas: material solto pode obstruir esgotamento e agravar alagamento e risco de incendio — explique de forma proporcional ao risco, sem exageros.",
-    "8. Nomenclatura da embarcacao: 'Praca de Maquinas' (nao 'PM'); propulsao azimutal = 'Compartimento dos Azimutais' (nao 'Schottel').",
-    "9. Encerre com acao pratica ligada ao item do checklist (verificar, confirmar, corrigir antes da saida).",
+    "8. Nomenclatura: Praça de Máquinas (nao PM); Compartimento dos Azimutais (nao Schottel).",
+    "9. No checklist, 'carga' de oleo lubrificante = volume para encher um carter (MCP em geral 600 ou 800 L por motor); use o glossario operacional se fornecido no contexto.",
+    "10. Material de consumo e ferramentas: use bom senso — explique a funcao real de cada item para emergencias na viagem (ex.: tubolit = reparo emergencial de vazamento em tubulacao, nao isolamento contra condensacao). Nao invente uso de produto.",
+    "11. Frise apeacao e guarda em local seguro: no balanco, material solto obstrui esgotamento, causa acidente ou agrava alagamento/incendio na Praca de Maquinas.",
+    "12. Encerre com acao pratica ligada ao item do checklist (verificar quantidade, acondicionamento e fixacao antes da saida).",
   ].join("\n");
 }
 

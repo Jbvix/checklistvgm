@@ -64,6 +64,32 @@ function chunkText(text, meta) {
   return chunks;
 }
 
+function ingestMarkdownGlossary(filePath) {
+  const raw = fs.readFileSync(filePath, "utf8");
+  const sections = raw.split(/^## /m).filter(Boolean);
+  const chunks = [];
+  const baseName = path.basename(filePath);
+
+  for (let i = 0; i < sections.length; i += 1) {
+    const block = sections[i].trim();
+    if (block.length < 40) continue;
+    const titleEnd = block.indexOf("\n");
+    const title = titleEnd > 0 ? block.slice(0, titleEnd).trim() : `secao-${i}`;
+    const body = block.slice(titleEnd + 1).replace(/\s+/g, " ").trim();
+    if (body.length < 30) continue;
+    const text = `${title}: ${body}`.slice(0, 2400);
+    chunks.push({
+      id: `glossario-${i}`,
+      source: "Glossario VGM (KRATOS)",
+      sourceId: "glossario",
+      text,
+      norm: normalize(text).slice(0, 1200)
+    });
+  }
+
+  return { file: baseName, chunks };
+}
+
 async function extractPdf(filePath, meta) {
   const buffer = fs.readFileSync(filePath);
   const data = await pdfParse(buffer);
@@ -118,8 +144,17 @@ async function main() {
     console.log(`  ${pages} paginas, ${chunks.length} trechos`);
   }
 
+  const glossaryPath = path.join(DOCS_DIR, "kratos-glossario.md");
+  if (fs.existsSync(glossaryPath)) {
+    console.log("Processando glossario KRATOS...");
+    const { file, chunks } = ingestMarkdownGlossary(glossaryPath);
+    allChunks.push(...chunks);
+    manifest.push({ id: "glossario", label: "Glossario VGM (KRATOS)", file, pages: 0, chunks: chunks.length });
+    console.log(`  ${chunks.length} trechos do glossario`);
+  }
+
   const index = {
-    version: 1,
+    version: 2,
     builtAt: new Date().toISOString(),
     manifest,
     chunks: allChunks

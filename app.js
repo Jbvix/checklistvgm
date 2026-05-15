@@ -1,7 +1,7 @@
 const WHATSAPP_NUMBER = "5585997737230";
 const STORAGE_KEY = "rebocador-vgm-checklist-v1";
 const KRATOS_FN = "/.netlify/functions/kratos";
-const KRATOS_PROMPT_VERSION = 3;
+const KRATOS_PROMPT_VERSION = 7;
 
 const checklist = [
   {
@@ -126,21 +126,21 @@ const checklist = [
     title: "Filtros e Fluidos Reserva",
     items: [
       "Filtros de oleo diesel reserva: 3 cargas de Racor e 2 cargas de filtros diferenciais de oleo combustivel dos MCPs, nao inclui a carga de substituicao antes da saida.",
-      "Filtros de oleo diesel reserva: 3 cargas de Racor e 3 cargas de filtros diferenciais de oleo combustivel dos MCPs.",
-      "Trocas de oleo: 06 cargas para cada MCA.",
-      "Oleo lubrificante dos MCPs e MCAs: 1 carga MCPs e tanque reserva cheio com 400 litros.",
+      "Filtros de óleo diesel reserva: 3 cargas de Racor e 3 cargas de filtros diferenciais de óleo combustível dos MCPs.",
+      "Trocas de oleo: 03 cargas para cada MCA.",
+      "Óleo lubrificante dos MCPs e MCAs: 1 carga de óleo dos MCPs.",
       "Oleo hidraulico do sistema de governo: 10 baldes de 20 litros, total 200 litros.",
-      "Oleo lubrificante do sistema de propulsao: 20 baldes de 20 litros, total 400 litros.",
+      "Oleo lubrificante do sistema de propulsao: 10 baldes de 20 litros, total 200 litros.",
       "Liquido de arrefecimento ELC: 10 baldes de 20 litros, total 200 litros.",
       "Filtros de oleo lubrificante dos propulsores: 02 cargas.",
-      "Filtros de oleo hidraulico do governo dos propulsores: 06 cargas.",
+      "Filtros de oleo hidraulico de governo dos propulsores: 03 cargas.",
       "Tanques de oleo lubrificante e hidraulico em nivel normal."
     ]
   },
   {
     title: "Material de Consumo",
     items: [
-      "04 fardos de trapo.",
+      "02 fardos de trapo.",
       "05 folhas de lixa para metal 100 e 320 cada.",
       "03 silvertapes.",
       "02 kg de tubolit.",

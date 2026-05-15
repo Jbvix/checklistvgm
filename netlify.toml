@@ -4,9 +4,12 @@
   publish = "."
   functions = "netlify/functions"
 
+[functions.kratos]
+  timeout = 26
+
 # XAI_API_KEY — variavel no painel Netlify (Site > Environment variables).
 # Apos criar ou alterar variaveis, faca um novo deploy para as funcoes enxergarem a chave.
-# Opcional: XAI_MODEL (padrao grok-4.3). KRATOS_WEB_SEARCH=false desliga busca na web.
+# Opcional: XAI_MODEL (padrao grok-4.3). KRATOS_WEB_SEARCH=true ativa busca na web (mais lento).
 # KRATOS usa API Responses da xAI com web_search (MAIB, Marinha, IMO, gov.br).
 
 [[headers]]

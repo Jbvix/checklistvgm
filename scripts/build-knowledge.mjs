@@ -12,6 +12,8 @@ const ROOT = path.join(__dirname, "..");
 const DOCS_DIR = path.join(ROOT, "docs");
 const OUT_DIR = path.join(ROOT, "netlify", "functions", "data");
 const OUT_FILE = path.join(OUT_DIR, "knowledge-index.json");
+const CONTEXT_FILE = path.join(OUT_DIR, "kratos-context.json");
+const PDF_IDS = new Set(["solas", "marpol-i", "normam-201"]);
 
 const SOURCES = [
   {
@@ -69,6 +71,9 @@ function ingestMarkdownGlossary(filePath) {
   const sections = raw.split(/^## /m).filter(Boolean);
   const chunks = [];
   const baseName = path.basename(filePath);
+  const sourceId = baseName.replace(/^kratos-/i, "").replace(/\.md$/i, "");
+  const sourceLabel =
+    sourceId === "persona" ? "Persona KRATOS" : sourceId === "glossario" ? "Glossario VGM (KRATOS)" : `KRATOS (${sourceId})`;
 
   for (let i = 0; i < sections.length; i += 1) {
     const block = sections[i].trim();
@@ -79,9 +84,9 @@ function ingestMarkdownGlossary(filePath) {
     if (body.length < 30) continue;
     const text = `${title}: ${body}`.slice(0, 2400);
     chunks.push({
-      id: `glossario-${i}`,
-      source: "Glossario VGM (KRATOS)",
-      sourceId: "glossario",
+      id: `${sourceId}-${i}`,
+      source: sourceLabel,
+      sourceId,
       text,
       norm: normalize(text).slice(0, 1200)
     });
@@ -167,8 +172,20 @@ async function main() {
   };
 
   fs.writeFileSync(OUT_FILE, JSON.stringify(index));
+
+  const contextChunks = allChunks.filter((c) => !PDF_IDS.has(c.sourceId));
+  const contextIndex = {
+    version: 2,
+    builtAt: new Date().toISOString(),
+    manifest: manifest.filter((m) => !PDF_IDS.has(m.id)),
+    chunks: contextChunks
+  };
+  fs.writeFileSync(CONTEXT_FILE, JSON.stringify(contextIndex));
+
   const mb = (fs.statSync(OUT_FILE).size / 1024 / 1024).toFixed(2);
-  console.log(`\nIndice gerado: ${OUT_FILE} (${mb} MB, ${allChunks.length} trechos)`);
+  const ctxKb = (fs.statSync(CONTEXT_FILE).size / 1024).toFixed(0);
+  console.log(`\nIndice completo: ${OUT_FILE} (${mb} MB, ${allChunks.length} trechos)`);
+  console.log(`Indice leve KRATOS: ${CONTEXT_FILE} (${ctxKb} KB, ${contextChunks.length} trechos)`);
 }
 
 main().catch((err) => {

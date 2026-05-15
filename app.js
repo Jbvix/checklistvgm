@@ -544,9 +544,22 @@ async function fetchKratosGuidance(key, panel) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sectionTitle, itemText, status })
     });
-    const data = await res.json().catch(() => ({}));
+    let data = {};
+    try {
+      data = await res.json();
+    } catch {
+      data = {};
+    }
     if (!res.ok) {
-      throw new Error(data.error || "Nao foi possivel obter a orientacao.");
+      const detail = data.error || `HTTP ${res.status}`;
+      throw new Error(
+        res.status === 404
+          ? "Funcao KRATOS nao encontrada. Abra o site pela URL da Netlify (nao arquivo local)."
+          : detail
+      );
+    }
+    if (!data.guidance) {
+      throw new Error(data.error || "Resposta vazia do KRATOS.");
     }
     state.kratos[key] = data.guidance;
     persist();

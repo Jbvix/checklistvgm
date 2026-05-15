@@ -3,15 +3,36 @@ const path = require("path");
 
 let cachedIndex = null;
 
+const PDF_SOURCE_IDS = new Set(["solas", "marpol-i", "normam-201"]);
+
+function readJson(filePath) {
+  if (!fs.existsSync(filePath)) return null;
+  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
 function loadIndex() {
   if (cachedIndex) return cachedIndex;
-  const indexPath = path.join(__dirname, "..", "data", "knowledge-index.json");
-  if (!fs.existsSync(indexPath)) {
-    cachedIndex = { chunks: [], manifest: [] };
+
+  const dataDir = path.join(__dirname, "..", "data");
+  const lightPath = path.join(dataDir, "kratos-context.json");
+  const fullPath = path.join(dataDir, "knowledge-index.json");
+
+  const light = readJson(lightPath);
+  if (light?.chunks?.length) {
+    cachedIndex = light;
     return cachedIndex;
   }
-  const raw = fs.readFileSync(indexPath, "utf8");
-  cachedIndex = JSON.parse(raw);
+
+  const full = readJson(fullPath);
+  if (full?.chunks?.length) {
+    cachedIndex = {
+      ...full,
+      chunks: full.chunks.filter((c) => !PDF_SOURCE_IDS.has(c.sourceId))
+    };
+    return cachedIndex;
+  }
+
+  cachedIndex = { chunks: [], manifest: [] };
   return cachedIndex;
 }
 
@@ -43,11 +64,15 @@ const STOP = new Set([
   "checklist"
 ]);
 
-/**
- * Recupera trechos dos PDFs base (SOLAS, MARPOL, NORMAM) por relevancia lexical.
- */
 function retrieveKnowledge(query, { limit = 4, maxChars = 3200 } = {}) {
-  const index = loadIndex();
+  let index;
+  try {
+    index = loadIndex();
+  } catch (err) {
+    console.error("loadIndex failed", err.message);
+    return { excerpts: [], manifest: [] };
+  }
+
   if (!index.chunks?.length) return { excerpts: [], manifest: index.manifest || [] };
 
   const tokens = [...new Set(tokenize(query))].filter((t) => !STOP.has(t));

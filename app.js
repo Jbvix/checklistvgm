@@ -1,5 +1,6 @@
 const WHATSAPP_NUMBER = "5585997737230";
 const STORAGE_KEY = "rebocador-vgm-checklist-v1";
+const KRATOS_FN = "/.netlify/functions/kratos";
 
 const checklist = [
   {
@@ -259,6 +260,7 @@ function init() {
 
   els.search.addEventListener("input", renderChecklist);
   els.copy.addEventListener("click", copyMessage);
+  els.whatsapp.addEventListener("click", shareWhatsAppPdf);
   els.clear.addEventListener("click", clearChecklist);
   els.expandAll.addEventListener("click", toggleAllSections);
   els.themeToggle.addEventListener("click", toggleTheme);
@@ -335,6 +337,10 @@ function renderChecklist() {
       updateSummary();
     });
   });
+
+  els.checklist.querySelectorAll(".kratos-btn").forEach((button) => {
+    button.addEventListener("click", () => onKratosToggle(button));
+  });
 }
 
 function renderSection(section, sectionIndex) {
@@ -372,6 +378,22 @@ function renderItem(item, sectionIndex, itemIndex) {
         ${statusButton(key, "ok", "OK", current)}
         ${statusButton(key, "pending", "Pendente", current)}
         ${statusButton(key, "na", "N/A", current)}
+      </div>
+      <div class="mt-3 rounded-md border border-slate-200 bg-slate-50/90 p-2">
+        <button
+          type="button"
+          class="kratos-btn inline-flex w-full items-start gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-left text-sm text-slate-800 shadow-sm"
+          data-kratos-key="${key}"
+        >
+          ${kratosGlyph()}
+          <span><span class="font-bold text-hull">KRATOS</span> — orientacao de chefe de maquinas: por que este item importa para a seguranca da viagem?</span>
+        </button>
+        <div
+          class="kratos-panel mt-2 hidden rounded-md border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-800 shadow-inner"
+          data-kratos-panel="${key}"
+          role="region"
+          aria-live="polite"
+        ></div>
       </div>
       <input data-note="${key}" value="${escapeHtml(note)}" class="mt-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sea focus:ring-2 focus:ring-sea/20" placeholder="Observacao do item" />
     </article>
@@ -421,7 +443,6 @@ function updateSummary() {
   els.ok.textContent = ok;
   els.pending.textContent = pending;
   els.total.textContent = keys.length;
-  els.whatsapp.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildMessage())}`;
 }
 
 function buildMessage() {
@@ -481,12 +502,233 @@ async function copyMessage() {
   }
 }
 
+function kratosGlyph() {
+  return `<svg class="mt-0.5 h-4 w-4 shrink-0 text-sea" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+  </svg>`;
+}
+
+function onKratosToggle(button) {
+  const key = button.dataset.kratosKey;
+  const panel = button.nextElementSibling;
+  if (!panel || !panel.classList.contains("kratos-panel")) return;
+
+  const isOpen = !panel.classList.contains("hidden");
+  if (isOpen) {
+    panel.classList.add("hidden");
+    return;
+  }
+
+  panel.classList.remove("hidden");
+  if (state.kratos[key]) {
+    panel.textContent = state.kratos[key];
+    panel.classList.remove("italic", "text-slate-500");
+    return;
+  }
+
+  panel.textContent = "Consultando KRATOS...";
+  panel.classList.add("italic", "text-slate-500");
+  fetchKratosGuidance(key, panel);
+}
+
+async function fetchKratosGuidance(key, panel) {
+  const [si, ii] = key.split("-").map(Number);
+  const sectionTitle = checklist[si]?.title || "";
+  const itemText = checklist[si]?.items[ii] || "";
+  const status = state.items[key] || "";
+
+  try {
+    const res = await fetch(KRATOS_FN, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sectionTitle, itemText, status })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || "Nao foi possivel obter a orientacao.");
+    }
+    state.kratos[key] = data.guidance;
+    persist();
+    panel.textContent = data.guidance;
+    panel.classList.remove("italic", "text-slate-500");
+  } catch (err) {
+    panel.textContent = err.message || "Falha na consulta ao KRATOS.";
+    panel.classList.remove("italic", "text-slate-500");
+  }
+}
+
+function buildWhatsAppCaptionShort() {
+  const vessel = state.meta.vessel || "Rebocador";
+  const orig = state.meta.origin || "?";
+  const dest = state.meta.destination || "?";
+  const when = `${state.meta.date || ""} ${state.meta.time || ""}`.trim();
+  return `Checklist pre-viagem (PDF anexo): ${vessel} | ${orig} -> ${dest}${when ? ` | ${when}` : ""}`;
+}
+
+function statusLabelForPdf(key) {
+  const v = state.items[key];
+  if (v === "ok") return "OK";
+  if (v === "pending") return "PEND";
+  if (v === "na") return "N/A";
+  return "--";
+}
+
+function loadImageNaturalSize(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => reject(new Error("Assinatura invalida"));
+    img.src = dataUrl;
+  });
+}
+
+async function buildChecklistPdfBlob() {
+  const { jsPDF } = window.jspdf || {};
+  if (!jsPDF) {
+    throw new Error("Biblioteca PDF indisponivel.");
+  }
+
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 44;
+  let y = margin;
+
+  const ensureSpace = (needed) => {
+    if (y + needed > pageH - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  const writeBlock = (text, fontSize = 10, bold = false) => {
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFontSize(fontSize);
+    const lines = doc.splitTextToSize(String(text), pageW - margin * 2);
+    const lineHeight = fontSize * 1.28;
+    for (const line of lines) {
+      ensureSpace(lineHeight);
+      doc.text(line, margin, y);
+      y += lineHeight;
+    }
+    y += 6;
+  };
+
+  writeBlock("Checklist Rebocador Antes da Viagem - VGM", 14, true);
+  writeBlock(
+    [
+      `Origem: ${state.meta.origin || "Nao informado"}`,
+      `Destino: ${state.meta.destination || "Nao informado"}`,
+      `Rebocador: ${state.meta.vessel || "Nao informado"}`,
+      `Responsavel: ${state.meta.responsible || "Nao informado"}`,
+      `Data e hora: ${state.meta.date || "--"} ${state.meta.time || "--"}`
+    ].join("\n"),
+    10
+  );
+
+  const keys = allKeys();
+  const checked = keys.filter((k) => state.items[k]).length;
+  const ok = keys.filter((k) => state.items[k] === "ok").length;
+  const pending = keys.filter((k) => state.items[k] === "pending").length;
+  const na = keys.filter((k) => state.items[k] === "na").length;
+  writeBlock(`Resumo: ${checked}/${keys.length} verificados | OK: ${ok} | Pendentes: ${pending} | N/A: ${na}`, 10, true);
+
+  checklist.forEach((section, si) => {
+    writeBlock(section.title, 11, true);
+    section.items.forEach((item, ii) => {
+      const k = itemKey(si, ii);
+      const st = statusLabelForPdf(k);
+      writeBlock(`- (${st}) ${item}`, 9);
+      const note = (state.notes[k] || "").trim();
+      if (note) {
+        writeBlock(`  Obs.: ${note}`, 8);
+      }
+    });
+  });
+
+  if (state.meta.notes?.trim()) {
+    writeBlock("Observacoes gerais:", 11, true);
+    writeBlock(state.meta.notes.trim(), 9);
+  }
+
+  writeBlock("Assinatura digital do responsavel:", 11, true);
+  const sig = state.meta.signature;
+  if (sig) {
+    const dims = await loadImageNaturalSize(sig);
+    const maxW = pageW - margin * 2;
+    const maxH = 150;
+    const scale = Math.min(maxW / dims.w, maxH / dims.h, 1);
+    const drawW = dims.w * scale;
+    const drawH = dims.h * scale;
+    ensureSpace(drawH + 20);
+    doc.addImage(sig, "PNG", margin, y, drawW, drawH);
+    y += drawH + 18;
+  } else {
+    writeBlock("(Sem assinatura registrada.)", 9);
+  }
+
+  writeBlock("Documento gerado eletronicamente para registro do checklist pre-viagem.", 8);
+
+  return doc.output("blob");
+}
+
+async function shareWhatsAppPdf(event) {
+  event?.preventDefault();
+  if (!state.meta.signature) {
+    showToast("Assine o checklist digitalmente antes de enviar o PDF pelo WhatsApp.", 4200);
+    return;
+  }
+  if (!window.jspdf?.jsPDF) {
+    showToast("Gerador de PDF indisponivel. Recarregue a pagina.", 3200);
+    return;
+  }
+
+  try {
+    const blob = await buildChecklistPdfBlob();
+    const safeDate = (state.meta.date || "sem-data").replace(/[^\d-]/g, "") || "sem-data";
+    const name = `checklist-rebocador-${safeDate}.pdf`;
+    const file = new File([blob], name, { type: "application/pdf" });
+    const caption = buildWhatsAppCaptionShort();
+
+    if (typeof navigator.share === "function") {
+      try {
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: "Checklist rebocador", text: caption });
+          showToast("PDF compartilhado.", 2400);
+          return;
+        }
+      } catch (shareErr) {
+        if (shareErr?.name === "AbortError") return;
+        console.warn(shareErr);
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = name;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+    const text = `${caption}\n\nInstrucoes: anexe o arquivo PDF que acabou de ser baixado a esta conversa.`;
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    showToast("PDF baixado. Anexe o arquivo na conversa do WhatsApp.", 4500);
+  } catch (err) {
+    console.error(err);
+    showToast(err?.message || "Nao foi possivel gerar o PDF.", 3600);
+  }
+}
+
 function clearChecklist() {
   const confirmed = window.confirm("Limpar checklist salvo neste aparelho?");
   if (!confirmed) return;
 
   state.items = {};
   state.notes = {};
+  state.kratos = {};
   state.meta.notes = "";
   state.meta.signature = "";
   els.notes.value = "";
@@ -506,10 +748,11 @@ function toggleAllSections() {
   els.expandAll.querySelector("span").textContent = shouldOpen ? "Fechar" : "Abrir";
 }
 
-function showToast(message) {
+function showToast(message, durationMs = 1800) {
   els.toast.textContent = message;
   els.toast.classList.remove("hidden");
-  window.setTimeout(() => els.toast.classList.add("hidden"), 1800);
+  window.clearTimeout(showToast._timer);
+  showToast._timer = window.setTimeout(() => els.toast.classList.add("hidden"), durationMs);
 }
 
 function toggleBackToTop() {
@@ -527,13 +770,14 @@ function loadState() {
       return {
         meta: saved.meta || {},
         items: saved.items || {},
-        notes: saved.notes || {}
+        notes: saved.notes || {},
+        kratos: saved.kratos || {}
       };
     }
   } catch {
     localStorage.removeItem(STORAGE_KEY);
   }
-  return { meta: {}, items: {}, notes: {} };
+  return { meta: {}, items: {}, notes: {}, kratos: {} };
 }
 
 function applyTheme() {

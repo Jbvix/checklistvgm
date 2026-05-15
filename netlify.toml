@@ -1,5 +1,12 @@
 [build]
   publish = "."
+  functions = "netlify/functions"
+
+# Chave da API x.ai (Grok) para o assistente KRATOS:
+# Netlify > Site settings > Environment variables > Add variable
+#   Name:  XAI_API_KEY
+#   Value: (sua chave; NUNCA commite o valor neste arquivo)
+# Opcional: XAI_MODEL (padrao grok-2-latest)
 
 [[headers]]
   for = "/*"

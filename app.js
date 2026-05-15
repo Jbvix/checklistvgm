@@ -1,7 +1,7 @@
 const WHATSAPP_NUMBER = "5585997737230";
 const STORAGE_KEY = "rebocador-vgm-checklist-v1";
 const KRATOS_FN = "/.netlify/functions/kratos";
-const KRATOS_PROMPT_VERSION = 7;
+const KRATOS_PROMPT_VERSION = 11;
 
 const checklist = [
   {
@@ -184,7 +184,7 @@ const checklist = [
       "Kit de chave Allen em mm.",
       "Chave inglesa pequena e media.",
       "Chave saca filtro.",
-      "Infrared.",
+      "Termometro Infravermelho.",
       "Multimetro.",
       "03 lanternas recarregaveis.",
       "04 pilhas AA, 04 pilhas AAA e 02 baterias 12V reserva.",

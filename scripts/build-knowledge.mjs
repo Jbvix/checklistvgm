@@ -144,13 +144,19 @@ async function main() {
     console.log(`  ${pages} paginas, ${chunks.length} trechos`);
   }
 
-  const glossaryPath = path.join(DOCS_DIR, "kratos-glossario.md");
-  if (fs.existsSync(glossaryPath)) {
-    console.log("Processando glossario KRATOS...");
-    const { file, chunks } = ingestMarkdownGlossary(glossaryPath);
+  const kratosMd = fs
+    .readdirSync(DOCS_DIR)
+    .filter((f) => /^kratos-.*\.md$/i.test(f))
+    .sort();
+
+  for (const file of kratosMd) {
+    const mdPath = path.join(DOCS_DIR, file);
+    console.log("Processando MD KRATOS:", file, "...");
+    const { chunks } = ingestMarkdownGlossary(mdPath);
+    const id = file.replace(/\.md$/i, "");
     allChunks.push(...chunks);
-    manifest.push({ id: "glossario", label: "Glossario VGM (KRATOS)", file, pages: 0, chunks: chunks.length });
-    console.log(`  ${chunks.length} trechos do glossario`);
+    manifest.push({ id, label: `KRATOS (${file})`, file, pages: 0, chunks: chunks.length });
+    console.log(`  ${chunks.length} trechos`);
   }
 
   const index = {

@@ -97,6 +97,37 @@ Itens da seção **Material de Consumo** e **Ferramentas** existem para **atende
 
 **02 kg:** reserva mínima para um ou mais reparos emergenciais sem precisar buscar material em terra durante a viagem costeira/oceânica.
 
+### Massa de calafetar (03 caixas, 24 filetes de 350 g no checklist)
+
+**Função principal a bordo:** vedação **emergencial** de infiltrações em **vigias (portinhos)**, **parabrisas** e passagens onde a estanqueidade foi comprometida — não substitui reparo estrutural definitivo.
+
+**Também pode auxiliar** em vedações pontuais de baixa pressão ou infiltração em interfaces de casco/acessórios durante navegação costeira, reduzindo entrada de água na **Praça de Máquinas** e risco de **poluição** (MARPOL — citar o tema, sem inventar artigo).
+
+**Limitações importantes (não exagerar o produto):**
+
+- **Não veda sistemas pressurizados** (tubulação de óleo, combustível, vapor, ar comprimido sob pressão). Para vazamento em tubo pressurizado, orientar tubolit, cola veda-junta adequada ou parada/isolamento da seção — conforme o caso.
+- **Não confundir** com silicone ou pasta veda-junta de flange; cada material tem aplicação distinta.
+
+**Acondicionamento:** caixas e filetes soltos obstruem dalas e esgotamento e aumentam risco de incêndio ou alagamento no balanço. Verificar **03 caixas / 24 filetes**, fixação e local seguro antes da saída.
+
+### Engates rápidos de ar 1/4" e 1/2" (03 unidades no checklist)
+
+**Função principal a bordo (rebocador VGM):** montagem e operação da **bomba Sand Piper pneumática** e **conexão rápida de mangueiras de ar comprimido** na Praça de Máquinas — alinhado ao item de segurança *“Bomba Sand Piper pneumática com mangueiras conectadas e mangueira de ar completa”*.
+
+**Uso secundário possível:** ligar ferramenta pneumática ou sopro de linha em reparo emergencial, se houver tomada de ar compatível — não apresentar isso como função principal se o glossário ou o item citar Sand Piper.
+
+**Por que importa na viagem:** sem engates íntegros e reserva, pode falhar a montagem da Sand Piper para esgoto/transferência com ar comprimido, atrasando contenção de alagamento ou intervenção em fluidos na PM.
+
+**Checklist:** **03 engates** (1/4" e 1/2") — conferir quantidade, tipo e estado das vedações (O-ring). **Apeação** em local seguro: peças soltas obstruem esgotamento e causam acidente no balanço.
+
+### Termômetro infravermelho (seção Ferramentas)
+
+**Função a bordo:** medir **temperatura sem contato** em superfícies de equipamentos (motores MCP/MCA, exaustores, mancais, resfriadores, quadros elétricos, tubulações) para **coletar parâmetros de temperatura** durante rondas e inspeções pré-viagem ou em mar.
+
+**Por que importa na viagem:** detectar **ponto quente** ou desvio de temperatura antes de falha (perda de lubrificação, sobrecarga, rolamento, refrigeracao deficiente), permitindo intervenção e evitando parada de propulsão ou dano em trecho oceânico.
+
+**Verificação:** aparelho disponível, pilhas ou carga OK, leitura estável; guardar em local seguro (ferramenta de diagnóstico, não deixar solto no balanço).
+
 ### Trapo, fitas, WD-40, conectores, etc. (orientação geral)
 
 | Material | Função usual em emergência a bordo |
@@ -104,10 +135,11 @@ Itens da seção **Material de Consumo** e **Ferramentas** existem para **atende
 | Trapo (fardos) | Limpeza de vazamentos, absorção de óleo/água, higiene de intervenção. |
 | Fita isolante / veda rosca / silver tape | Isolamento elétrico provisório, vedação de roscas, amarração temporária. |
 | WD-40 / limpa contato | Lubrificação/desbloqueio leve, limpeza de contatos elétricos. |
-| Massa de calafetar / silicone / veda junta | Vedação de passagens, flanges, cubas com infiltração. |
+| Silicone / cola veda-junta | Vedação de juntas e passagens conforme tipo de produto (não é massa de calafetar). |
 | Lanternas, pilhas | Iluminação e energia para inspeção/reparo com segurança. |
+| Termômetro infravermelho | Coleta de temperatura de equipamentos (diagnóstico preventivo). |
 
-Adaptar a explicação ao **texto exato do item** do checklist.
+Adaptar a explicação ao **texto exato do item** do checklist. Para materiais pouco descritos no glossário, o KRATOS pode **consultar busca na web** (ficha técnica, uso marítimo) e **adaptar à realidade do rebocador**, sem inventar norma ou marca.
 
 ## Apeação, guarda e arrumação (todos os itens)
 

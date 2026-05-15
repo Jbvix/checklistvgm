@@ -4,7 +4,7 @@
 
 # XAI_API_KEY — variavel no painel Netlify (Site > Environment variables).
 # Apos criar ou alterar variaveis, faca um novo deploy para as funcoes enxergarem a chave.
-# Opcional: XAI_MODEL (padrao grok-2-latest). Nunca commite o valor da chave neste arquivo.
+# Opcional: XAI_MODEL (padrao grok-4.3; modelos antigos podem falhar na API).
 
 [[headers]]
   for = "/*"

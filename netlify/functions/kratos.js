@@ -1,5 +1,18 @@
 const XAI_URL = "https://api.x.ai/v1/chat/completions";
 
+/** Extrai mensagem segura do corpo JSON de erro da xAI (para o usuario diagnosticar). */
+function parseXaiErrorMessage(raw) {
+  if (!raw || typeof raw !== "string") return "";
+  try {
+    const j = JSON.parse(raw);
+    const msg = j?.error?.message || j?.message;
+    if (typeof msg !== "string") return "";
+    return msg.replace(/\s+/g, " ").trim().slice(0, 220);
+  } catch {
+    return "";
+  }
+}
+
 const corsHeaders = {
   "Content-Type": "application/json",
   "Access-Control-Allow-Origin": "*",
@@ -46,7 +59,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: "Texto do item ausente" }) };
   }
 
-  const model = process.env.XAI_MODEL || "grok-2-latest";
+  const model = process.env.XAI_MODEL || "grok-4.3";
 
   const system = [
     "Voce e KRATOS, chefe de maquinas de rebocador portuario com ampla experiencia em propulsao, auxiliares e seguranca de maquinas.",
@@ -82,11 +95,17 @@ exports.handler = async (event) => {
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
-    console.error("xAI HTTP", res.status, errText.slice(0, 500));
+    console.error("xAI HTTP", res.status, errText.slice(0, 800));
+    const apiHint = parseXaiErrorMessage(errText);
+    const fallback =
+      res.status === 401 || res.status === 403
+        ? "Chave da API xAI recusada (401/403). Confira XAI_API_KEY na Netlify."
+        : `A API xAI respondeu HTTP ${res.status}. Verifique creditos, modelo (XAI_MODEL) e um novo deploy.`;
+    const error = apiHint ? `xAI: ${apiHint}` : fallback;
     return {
-      statusCode: 502,
+      statusCode: res.status >= 500 ? 502 : 400,
       headers: corsHeaders,
-      body: JSON.stringify({ error: "Falha ao consultar o assistente. Tente novamente em instantes." })
+      body: JSON.stringify({ error })
     };
   }
 

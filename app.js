@@ -5,43 +5,42 @@ const KRATOS_PROMPT_VERSION = 3;
 
 const checklist = [
   {
-    title: "Residuos",
+    title: "Resíduos",
     items: [
       "Residuos dos dalas, tanques de aguas oleosas e oleo sujo devidamente esgotados.",
       "Remover trapos das dalas e qualquer material que possa dificultar o esgoto."
     ]
   },
   {
-    title: "Ventilacoes",
+    title: "Ventilações",
     items: [
-      "Ventilacoes da PM em funcionamento.",
-      "Ventilacao do sistema Schottel operacional.",
-      "Exaustores das acomodacoes e cozinha operacionais."
+      "Ventilações da Praça de Máquinas em funcionamento.",
+      "Exaustores das acomodações e cozinha operacionais."
     ]
   },
   {
-    title: "Seguranca",
+    title: "Segurança",
     items: [
       "Estanqueidade das saidas de emergencia aprovada, recomendado teste com giz.",
       "Bombas de incendio e esgoto operacionais.",
       "Bomba Sand Piper pneumatica com mangueiras conectadas e mangueira de ar completa.",
-      "Boias de alarme dos dalas operacionais.",
+      "Boias de alarme das dalas operacionais.",
       "Painel de alarme funcionando, verificar e corrigir alarmes falsos ou ativos.",
       "Extintores revisados, lacrados, integros e abastecidos.",
       "Caixas de incendio com mangueiras, chaves e esguichos integros.",
       "KIT SOPEP revisado, completo e integro.",
-      "Comunicacao PM, Schottel e passadico testada, headsets integros e telefone autoexcitado operacional.",
-      "Alarme visual e sonoro PM e Schottel operacional.",
-      "Botoeira de parada de bombas e ventilacao testada e operacional.",
-      "Limpadores de parabrisa e esguichos do passadico operacionais e integros."
+      "Sistemas de Comunicação da Praça de Máquinas, Compartimento dos Azimutais e Passadiço testados. Headsets íntegros e telefone autoexcitado operacionais.",
+      "Alarme visual e sonoro da Praça de Máquinas e Compartimento dos Azimutais operacional.",
+      "Botoeira de parada de bombas e ventilação testada e operacional.",
+      "Limpadores de parabrisa e esguichos do Passadiço operacionais e íntegros."
     ]
   },
   {
-    title: "Sistema Eletrico e Baterias",
+    title: "Sistema Elétrico e Baterias",
     items: [
       "Carregadores de baterias sem alarme, funcionamento OK.",
-      "Baterias da PM e Tijupa dentro da validade aceitavel, bornes integros.",
-      "Luzes de emergencia operacionais, com lampadas de reserva."
+      "Baterias da Praça de Máquinas e Tijupa dentro da validade aceitável, bornes íntegros.",
+      "Luzes de emergência operacionais, com lâmpadas de reserva."
     ]
   },
   {
@@ -387,7 +386,7 @@ function renderItem(item, sectionIndex, itemIndex) {
           data-kratos-key="${key}"
         >
           ${kratosGlyph()}
-          <span><span class="font-bold text-hull">KRATOS</span> — orientacao de seguranca (SOLAS / NORMAM / MARPOL / MAIB): importancia deste item na viagem costeira.</span>
+          <span><span class="font-bold text-hull">KRATOS</span> — orientação de segurança (SOLAS / NORMAM / MARPOL / MAIB): importância deste item na viagem costeira.</span>
         </button>
         <div
           class="kratos-panel mt-2 hidden rounded-md border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-800 shadow-inner"
@@ -396,7 +395,7 @@ function renderItem(item, sectionIndex, itemIndex) {
           aria-live="polite"
         ></div>
       </div>
-      <input data-note="${key}" value="${escapeHtml(note)}" class="mt-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sea focus:ring-2 focus:ring-sea/20" placeholder="Observacao do item" />
+      <input data-note="${key}" value="${escapeHtml(note)}" class="mt-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sea focus:ring-2 focus:ring-sea/20" placeholder="Observação do item" />
     </article>
   `;
 }

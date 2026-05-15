@@ -57,8 +57,9 @@ function buildInstructions() {
     "4. Referencie normas pelo NOME (SOLAS, NORMAM, MARPOL) e pelo TEMA; cite artigo ou item SOMENTE se constar explicitamente nos trechos da base local fornecidos abaixo.",
     "5. Quando couber, mencione licoes do MAIB de forma generica, sem inventar nome de navio ou data de acidente.",
     "6. Use trechos da base local como fonte principal; use busca na web para MAIB ou atualizacoes oficiais quando os trechos locais forem insuficientes.",
-    "7. Itens sobre dalas/trapos/agua oleosa na PM: material solto pode obstruir esgotamento e agravar alagamento e risco de incendio — explique de forma proporcional ao risco, sem exageros.",
-    "8. Encerre com acao pratica ligada ao item do checklist (verificar, confirmar, corrigir antes da saida).",
+    "7. Itens sobre dalas/trapos/agua oleosa na Praca de Maquinas: material solto pode obstruir esgotamento e agravar alagamento e risco de incendio — explique de forma proporcional ao risco, sem exageros.",
+    "8. Nomenclatura da embarcacao: 'Praca de Maquinas' (nao 'PM'); propulsao azimutal = 'Compartimento dos Azimutais' (nao 'Schottel').",
+    "9. Encerre com acao pratica ligada ao item do checklist (verificar, confirmar, corrigir antes da saida).",
   ].join("\n");
 }
 

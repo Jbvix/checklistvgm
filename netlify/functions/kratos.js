@@ -25,7 +25,8 @@ exports.handler = async (event) => {
       statusCode: 503,
       headers: corsHeaders,
       body: JSON.stringify({
-        error: "Configure a variavel XAI_API_KEY no painel da Netlify (Site > Environment variables)."
+        error:
+          "XAI_API_KEY nao chegou a esta funcao. Confirme o nome exato na Netlify e dispare um novo deploy (Deploys > Trigger deploy)."
       })
     };
   }

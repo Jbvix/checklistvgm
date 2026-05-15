@@ -1,0 +1,58 @@
+{
+  "version": "1.1",
+  "date": "2026-05-15",
+  "author": "Jossian Brito",
+  "project": "Checklist VGM / Assistente KRATOS",
+  "change_log": [
+    "Removido do bloco Compressores de Ar o risco: Falha de ar de partida.",
+    "Reforçado foco em controle pneumático, água na rede, pressão irregular, corrosão interna e serviços auxiliares.",
+    "Mantido formato operacional para resposta do KRATOS em três blocos: Verificação, Risco e Ação."
+  ],
+  "purpose": "Base de conhecimento para respostas operacionais curtas do KRATOS no checklist de preparação de rebocadores para viagem.",
+  "response_format": {
+    "blocks": [
+      "1. Verificação:",
+      "2. Risco:",
+      "3. Ação:"
+    ],
+    "rules": [
+      "Responder em 3 blocos curtos.",
+      "Não emitir parecer jurídico.",
+      "Não inventar exigência legal.",
+      "Citar SOLAS, MARPOL ou NORMAM apenas quando a relação for clara.",
+      "Orientar marcar PENDENTE quando houver falha crítica.",
+      "Orientar marcar N/A apenas com justificativa curta."
+    ]
+  },
+  "knowledge": [
+    {
+      "id": "compressores_ar",
+      "section": "Compressores de Ar",
+      "system": "Compressores, correias, óleo lubrificante, purgadores, drenos, reguladores de pressão e rede de ar.",
+      "keywords": [
+        "compressores",
+        "ar",
+        "correias",
+        "purgadores",
+        "drenos",
+        "reguladores",
+        "pressão",
+        "controle pneumático",
+        "rede de ar"
+      ],
+      "verify": "Confirmar operação automática/manual, pressão normal, ausência de vazamentos, correias reserva, óleo disponível e purgadores funcionando.",
+      "risks": [
+        "Perda de controle pneumático.",
+        "Água na rede de ar.",
+        "Pressão irregular.",
+        "Corrosão interna.",
+        "Indisponibilidade de serviços auxiliares.",
+        "Redução da confiabilidade de sistemas pneumáticos durante a viagem."
+      ],
+      "risk": "Perda de controle pneumático, água na rede de ar, pressão irregular, corrosão interna e indisponibilidade de serviços auxiliares.",
+      "action": "Testar compressores, drenar umidade, verificar pressão, corrigir vazamentos e marcar PENDENTE se faltar reserva crítica.",
+      "normative_hint": "Boas práticas de máquinas e confiabilidade operacional.",
+      "short_response": "1. Verificação: testar compressores, purgadores, drenos, reguladores e reservas de correia/óleo.\n2. Risco: perda de controle pneumático, água na rede, pressão irregular ou indisponibilidade de serviços auxiliares.\n3. Ação: corrigir vazamentos e pressão anormal; se faltar reserva crítica, marcar PENDENTE."
+    }
+  ]
+}

@@ -95,6 +95,63 @@ function ingestMarkdownGlossary(filePath) {
   return { file: baseName, chunks };
 }
 
+/** Base JSON de equipamentos/riscos (docs/equipamentos-riscos-kratos-*.json) — trechos para retrieveKnowledge. */
+function ingestEquipamentosRiscosJson(filePath) {
+  const raw = fs.readFileSync(filePath, "utf8");
+  const data = JSON.parse(raw);
+  const chunks = [];
+  const sourceId = "equip-riscos";
+  const sourceLabel = "Equipamentos e riscos KRATOS (JSON)";
+
+  const metaParts = [];
+  if (data.purpose) metaParts.push(`Objetivo: ${data.purpose}`);
+  if (Array.isArray(data.change_log) && data.change_log.length) {
+    metaParts.push(`Historico: ${data.change_log.join("; ")}`);
+  }
+  if (data.response_format?.rules?.length) {
+    metaParts.push(`Regras resposta: ${data.response_format.rules.join("; ")}`);
+  }
+  if (metaParts.length) {
+    const text = metaParts.join(" ").slice(0, 2400);
+    chunks.push({
+      id: `${sourceId}-meta`,
+      source: sourceLabel,
+      sourceId,
+      text,
+      norm: normalize(text).slice(0, 1200)
+    });
+  }
+
+  for (const item of data.knowledge || []) {
+    const kw = Array.isArray(item.keywords) ? item.keywords.join(", ") : "";
+    const risksArr = Array.isArray(item.risks) ? item.risks.join(" ") : "";
+    const riskText = item.risk || risksArr;
+    const parts = [
+      `Secao checklist: ${item.section || item.id}`,
+      item.system ? `Sistema: ${item.system}` : null,
+      kw ? `Palavras-chave: ${kw}` : null,
+      item.verify ? `Verificacao sugerida: ${item.verify}` : null,
+      riskText ? `Riscos operacionais: ${riskText}` : null,
+      item.action ? `Acao sugerida: ${item.action}` : null,
+      item.normative_hint ? `Base: ${item.normative_hint}` : null,
+      item.short_response
+        ? `Exemplo resposta: ${String(item.short_response).replace(/\s+/g, " ").trim()}`
+        : null
+    ].filter(Boolean);
+    const text = parts.join(". ").slice(0, 2400);
+    const kid = String(item.id || item.section || "item").replace(/\s+/g, "-");
+    chunks.push({
+      id: `${sourceId}-${kid}`,
+      source: sourceLabel,
+      sourceId,
+      text,
+      norm: normalize(text).slice(0, 1200)
+    });
+  }
+
+  return { file: path.basename(filePath), chunks };
+}
+
 async function extractPdf(filePath, meta) {
   const buffer = fs.readFileSync(filePath);
   const data = await pdfParse(buffer);
@@ -162,6 +219,21 @@ async function main() {
     allChunks.push(...chunks);
     manifest.push({ id, label: `KRATOS (${file})`, file, pages: 0, chunks: chunks.length });
     console.log(`  ${chunks.length} trechos`);
+  }
+
+  const equipJson = path.join(DOCS_DIR, "equipamentos-riscos-kratos-v1_1.json");
+  if (fs.existsSync(equipJson)) {
+    console.log("Processando JSON KRATOS:", path.basename(equipJson), "...");
+    const { file: equipFile, chunks: equipChunks } = ingestEquipamentosRiscosJson(equipJson);
+    allChunks.push(...equipChunks);
+    manifest.push({
+      id: "equip-riscos",
+      label: "Equipamentos e riscos (KRATOS JSON)",
+      file: equipFile,
+      pages: 0,
+      chunks: equipChunks.length
+    });
+    console.log(`  ${equipChunks.length} trechos`);
   }
 
   const index = {

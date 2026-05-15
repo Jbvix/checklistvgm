@@ -1,7 +1,7 @@
 const WHATSAPP_NUMBER = "5585997737230";
 const STORAGE_KEY = "rebocador-vgm-checklist-v1";
 const KRATOS_FN = "/.netlify/functions/kratos";
-const KRATOS_PROMPT_VERSION = 20;
+const KRATOS_PROMPT_VERSION = 21;
 
 const checklist = [
   {

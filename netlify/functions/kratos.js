@@ -1,9 +1,6 @@
 const { retrieveKnowledge } = require("./lib/knowledge");
 
-const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses";
-const XAI_CHAT_URL = "https://api.x.ai/v1/chat/completions";
-const MAIB_URL = "https://www.gov.uk/government/organisations/marine-accident-investigation-branch";
-const WEB_SEARCH_DOMAINS = ["gov.uk", "marinha.mil.br", "imo.org", "gov.br", "www6.mar.mil.br"];
+const DEFAULT_GPT_BASE = "https://api.openai.com/v1";
 
 const corsHeaders = {
   "Content-Type": "application/json",
@@ -12,7 +9,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS"
 };
 
-function parseXaiErrorMessage(raw) {
+function parseApiErrorMessage(raw) {
   if (!raw || typeof raw !== "string") return "";
   try {
     const j = JSON.parse(raw);
@@ -96,27 +93,10 @@ function buildUserContent(sectionTitle, itemText, status, localExcerpts, equipme
     .join("\n");
 }
 
-async function callXaiResponses(body, apiKey) {
-  const res = await fetch(XAI_RESPONSES_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify(body)
-  });
-  const raw = await res.text().catch(() => "");
-  let data = {};
-  try {
-    data = raw ? JSON.parse(raw) : {};
-  } catch {
-    data = {};
-  }
-  return { res, data, raw };
-}
-
-async function callXaiChat(messages, model, apiKey) {
-  const res = await fetch(XAI_CHAT_URL, {
+async function callOpenAiChat(messages, model, apiKey, apiBase) {
+  const base = (apiBase || DEFAULT_GPT_BASE).replace(/\/$/, "");
+  const url = `${base}/chat/completions`;
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -139,51 +119,32 @@ async function callXaiChat(messages, model, apiKey) {
   return { res, data, raw };
 }
 
-async function generateGuidance({ systemPrompt, userContent, model, apiKey, useWebSearch }) {
-  const input = [
+async function generateGuidance({ systemPrompt, userContent, model, apiKey, apiBase }) {
+  const messages = [
     { role: "system", content: systemPrompt },
     { role: "user", content: userContent }
   ];
 
-  const responsesBody = {
-    model,
-    store: false,
-    temperature: 0.22,
-    max_output_tokens: 520,
-    input
-  };
-
-  if (useWebSearch) {
-    responsesBody.tools = [{ type: "web_search", filters: { allowed_domains: WEB_SEARCH_DOMAINS } }];
-  }
-
-  let { res, data, raw } = await callXaiResponses(responsesBody, apiKey);
-  let guidance = res.ok ? extractResponseText(data) : "";
+  const chat = await callOpenAiChat(messages, model, apiKey, apiBase);
+  const guidance = chat.res.ok ? extractResponseText(chat.data) : "";
 
   if (guidance) {
-    return { guidance, mode: useWebSearch ? "responses+web" : "responses" };
+    return { guidance, mode: "openai-chat" };
   }
 
-  if (!res.ok) {
-    console.error("xAI Responses", res.status, raw.slice(0, 600));
+  if (!chat.res.ok) {
+    console.error("OpenAI chat/completions", chat.res.status, chat.raw.slice(0, 600));
   } else {
-    console.error("xAI Responses empty output", JSON.stringify(data).slice(0, 400));
+    console.error("OpenAI empty output", JSON.stringify(chat.data).slice(0, 400));
   }
 
-  const chat = await callXaiChat(input, model, apiKey);
-  guidance = chat.res.ok ? extractResponseText(chat.data) : "";
-
-  if (guidance) {
-    return { guidance, mode: "chat-fallback" };
-  }
-
-  const hint = parseXaiErrorMessage(raw) || parseXaiErrorMessage(chat.raw);
-  const status = res.status || chat.res.status;
+  const hint = parseApiErrorMessage(chat.raw);
+  const status = chat.res.status;
   throw new Error(
     hint ||
       (status === 401 || status === 403
-        ? "Chave xAI recusada. Confira XAI_API_KEY na Netlify."
-        : `Servico xAI indisponivel (HTTP ${status || "?"}). Tente novamente.`)
+        ? "Chave GPT recusada. Confira GPT_API_KEY na Netlify."
+        : `Servico GPT indisponivel (HTTP ${status || "?"}). Tente novamente.`)
   );
 }
 
@@ -197,13 +158,13 @@ exports.handler = async (event) => {
   }
 
   try {
-    if (!process.env.XAI_API_KEY) {
+    if (!process.env.GPT_API_KEY) {
       return {
         statusCode: 503,
         headers: corsHeaders,
         body: JSON.stringify({
           error:
-            "XAI_API_KEY nao configurada. Netlify: Environment variables > Production > novo deploy."
+            "GPT_API_KEY nao configurada. Netlify: Environment variables > Production > novo deploy."
         })
       };
     }
@@ -230,8 +191,8 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: "Texto do item ausente" }) };
     }
 
-    const model = process.env.XAI_MODEL || "grok-4.3";
-    const useWebSearch = process.env.KRATOS_WEB_SEARCH === "true";
+    const model = process.env.GPT_MODEL || "gpt-4o-mini";
+    const apiBase = process.env.GPT_API_BASE || DEFAULT_GPT_BASE;
 
     const query = [sectionTitle, itemText, formatEquipmentBlock(safeEquipment)].filter(Boolean).join(" ");
     const { excerpts } = retrieveKnowledge(query, { limit: 5, maxChars: 3500 });
@@ -241,8 +202,8 @@ exports.handler = async (event) => {
       systemPrompt: buildSystemPrompt(),
       userContent,
       model,
-      apiKey: process.env.XAI_API_KEY,
-      useWebSearch
+      apiKey: process.env.GPT_API_KEY,
+      apiBase
     });
 
     return {

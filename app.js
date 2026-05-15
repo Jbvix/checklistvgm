@@ -1,7 +1,7 @@
 const WHATSAPP_NUMBER = "5585997737230";
 const STORAGE_KEY = "rebocador-vgm-checklist-v1";
 const KRATOS_FN = "/.netlify/functions/kratos";
-const KRATOS_PROMPT_VERSION = 19;
+const KRATOS_PROMPT_VERSION = 20;
 
 const checklist = [
   {
@@ -540,19 +540,48 @@ async function copyMessage() {
 }
 
 function stripKratosLabelPrefix(text, kind) {
-  let t = String(text || "").trim();
+  let t = String(text || "")
+    .normalize("NFC")
+    .replace(/\uFEFF/g, "")
+    .trim();
   if (!t || t === "—") return t;
 
-  const patterns =
-    kind === "verify"
-      ? [/^verifica[çc][aã]o\s+objetiva\s*:?\s*/i, /^verifica[çc][aã]o\s*:?\s*/i]
-      : kind === "risk"
-        ? [/^risco\s+operacional\s*:?\s*/i, /^risco\s*:?\s*/i]
-        : [/^a[cç][aã]o\s+recomendada\s*:?\s*/i, /^a[cç][aã]o\s*:?\s*/i];
+  const colon = String.raw`\s*[\u003A\uFF1A]\s*`;
 
-  let changed = true;
-  while (changed) {
-    changed = false;
+  const cores =
+    kind === "verify"
+      ? [
+          `Verifica\u00E7\u00E3o\\s+objetiva${colon}`,
+          `Verifica\u00E7\u00E3o${colon}`,
+          `Verificacao\\s+objetiva${colon}`,
+          `Verificacao${colon}`
+        ]
+      : kind === "risk"
+        ? [`Risco\\s+operacional${colon}`, `Risco${colon}`]
+        : [
+            `A\u00E7\u00E3o\\s+recomendada${colon}`,
+            `A\u00E7\u00E3o${colon}`,
+            `Acao\\s+recomendada${colon}`,
+            `Acao${colon}`
+          ];
+
+  const patterns = [];
+  for (const core of cores) {
+    patterns.push(
+      new RegExp(`^\\s*\\d+\\.\\s*${core}`, "iu"),
+      new RegExp(`^\\s*${core}`, "iu")
+    );
+  }
+  patterns.push(
+    ...(kind === "verify"
+      ? [/^verifica[çc][aã]o\s+objetiva\s*:?\s*/iu, /^verifica[çc][aã]o\s*:?\s*/iu]
+      : kind === "risk"
+        ? [/^risco\s+operacional\s*:?\s*/iu, /^risco\s*:?\s*/iu]
+        : [/^a[cç][aã]o\s+recomendada\s*:?\s*/iu, /^a[cç][aã]o\s*:?\s*/iu])
+  );
+
+  for (let iter = 0; iter < 12; iter++) {
+    let changed = false;
     for (const re of patterns) {
       const next = t.replace(re, "").trim();
       if (next !== t) {
@@ -560,12 +589,23 @@ function stripKratosLabelPrefix(text, kind) {
         changed = true;
       }
     }
+    if (!changed) break;
   }
+
   return t.trim() || "—";
 }
 
+function joinBucketParts(buckets, index, kind) {
+  return (buckets[index] || [])
+    .map((part) => stripKratosLabelPrefix(part, kind))
+    .filter((p) => p && p !== "—")
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function parseKratosGuidance(text) {
-  const raw = (text || "").replace(/\r/g, "").trim();
+  const raw = (text || "").replace(/\r/g, "").normalize("NFC").trim();
   if (!raw) return { verify: "", risk: "", action: "" };
 
   const buckets = [[], [], [], []];
@@ -585,15 +625,17 @@ function parseKratosGuidance(text) {
     }
   }
 
-  const join = (i) => (buckets[i] || []).join(" ").replace(/\s+/g, " ").trim();
-  const verify = join(0);
-  const risk = join(1);
-  const act = join(2);
-  const norm = join(3);
+  const verify = joinBucketParts(buckets, 0, "verify");
+  const risk = joinBucketParts(buckets, 1, "risk");
+  const act = joinBucketParts(buckets, 2, "action");
+  const norm = joinBucketParts(buckets, 3, "action");
   let action = act;
   if (norm) action = act ? `${act} ${norm}` : norm;
 
   if (!verify && !risk && !action) {
+    const split = parseKratosGuidanceUnnumbered(raw);
+    const hasBody = [split.verify, split.risk, split.action].some((x) => x && x !== "—");
+    if (hasBody) return split;
     return {
       verify: stripKratosLabelPrefix(raw, "verify"),
       risk: "—",
@@ -605,6 +647,50 @@ function parseKratosGuidance(text) {
     verify: stripKratosLabelPrefix(verify || "—", "verify"),
     risk: stripKratosLabelPrefix(risk || "—", "risk"),
     action: stripKratosLabelPrefix(action || "—", "action")
+  };
+}
+
+function parseKratosGuidanceUnnumbered(raw) {
+  const t = raw.normalize("NFC");
+  const blocks = { verify: "", risk: "", action: "" };
+
+  const grab = (labelRe, nextLabels) => {
+    const m = t.match(labelRe);
+    if (!m) return "";
+    const rest = (m[1] || "").trim();
+    if (!nextLabels) return rest;
+    const cut = rest.split(nextLabels)[0];
+    return cut.trim();
+  };
+
+  blocks.verify = grab(
+    /(?:^|\n)\s*Verifica\u00E7\u00E3o\s*[\u003A\uFF1A]\s*([\s\S]*)/iu,
+    /\n\s*Risco\s*[\u003A\uFF1A]/i
+  );
+  if (!blocks.verify) {
+    blocks.verify = grab(
+      /(?:^|\n)\s*(?:\d+\.\s*)?Verifica\u00E7\u00E3o\s*[\u003A\uFF1A]?\s*([\s\S]*)/iu,
+      /\n\s*Risco\s*[\u003A\uFF1A]/i
+    );
+  }
+
+  const afterRisk = t.match(/(?:^|\n)\s*Risco\s*[\u003A\uFF1A]\s*([\s\S]*)/i);
+  if (afterRisk) {
+    const chunk = afterRisk[1].trim();
+    const actionPart = chunk.split(/(?:^|\n)\s*A\u00E7\u00E3o\s*[\u003A\uFF1A]/i);
+    blocks.risk = (actionPart[0] || "").trim();
+    if (actionPart[1]) blocks.action = actionPart[1].trim();
+  }
+
+  if (!blocks.action) {
+    const afterAction = t.match(/(?:^|\n)\s*A\u00E7\u00E3o\s*[\u003A\uFF1A]\s*([\s\S]*)/i);
+    if (afterAction) blocks.action = afterAction[1].trim();
+  }
+
+  return {
+    verify: stripKratosLabelPrefix(blocks.verify || "—", "verify"),
+    risk: stripKratosLabelPrefix(blocks.risk || "—", "risk"),
+    action: stripKratosLabelPrefix(blocks.action || "—", "action")
   };
 }
 

@@ -147,9 +147,68 @@
         border-color: #334155 !important;
         color: #e2e8f0 !important;
       }
+
+      body.splash-active {
+        overflow: hidden;
+      }
+
+      #app-splash {
+        background: linear-gradient(165deg, #12313f 0%, #0b1720 45%, #0f766e 100%);
+      }
+
+      #app-splash.splash-leaving {
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.45s ease;
+      }
+
+      #splash-progress-fill {
+        box-shadow: 0 0 12px rgba(45, 212, 191, 0.45);
+      }
     </style>
   </head>
-  <body class="min-h-screen text-slate-900 antialiased">
+  <body class="min-h-screen text-slate-900 antialiased splash-active">
+    <div
+      id="app-splash"
+      class="fixed inset-0 z-[100] flex flex-col"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="splash-title"
+      aria-describedby="splash-step"
+    >
+      <div id="app-splash" class="flex flex-1 flex-col justify-center px-5 py-8 sm:px-8">
+        <div class="mx-auto w-full max-w-lg text-center">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-teal-200/90">Checklist VGM</p>
+          <h1 id="splash-title" class="mt-2 text-2xl font-bold leading-tight text-white sm:text-3xl">Rebocador — pré-viagem</h1>
+          <p class="mt-2 text-sm text-teal-100/95">Inicialização do sistema de checklist e apoio KRATOS</p>
+
+          <div class="mt-10 h-2.5 overflow-hidden rounded-full bg-white/15 shadow-inner">
+            <div id="splash-progress-fill" class="h-full w-0 rounded-full bg-teal-300"></div>
+          </div>
+          <p id="splash-pct" class="mt-2 font-mono text-sm font-semibold text-teal-100">0%</p>
+          <p id="splash-step" class="mt-5 min-h-[3.25rem] text-sm leading-relaxed text-white/95">Preparando ambiente…</p>
+
+          <div class="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
+            <button
+              type="button"
+              id="splash-start"
+              class="inline-flex items-center justify-center rounded-md bg-white px-8 py-3.5 text-base font-bold text-hull shadow-lg shadow-black/20 transition hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-white/60"
+            >
+              Iniciar
+            </button>
+            <button
+              type="button"
+              id="splash-orientation"
+              class="inline-flex items-center justify-center rounded-md border border-white/35 bg-white/10 px-8 py-3.5 text-base font-semibold text-white backdrop-blur transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-teal-300/50"
+            >
+              Orientação ao usuário
+            </button>
+          </div>
+          <p class="mt-8 text-xs text-teal-200/70">A abertura automática encerra em 15 segundos ou use Iniciar.</p>
+        </div>
+      </div>
+    </div>
+
     <header class="relative overflow-hidden bg-hull text-white">
       <div id="wave-canvas" class="absolute inset-0 opacity-70"></div>
       <div class="relative mx-auto max-w-5xl px-4 pb-5 pt-5">

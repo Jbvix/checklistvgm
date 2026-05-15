@@ -1,7 +1,7 @@
 const WHATSAPP_NUMBER = "5585997737230";
 const STORAGE_KEY = "rebocador-vgm-checklist-v1";
 const KRATOS_FN = "/.netlify/functions/kratos";
-const KRATOS_PROMPT_VERSION = 14;
+const KRATOS_PROMPT_VERSION = 18;
 
 const checklist = [
   {
@@ -402,14 +402,20 @@ function renderItem(item, sectionIndex, itemIndex) {
           data-kratos-key="${key}"
         >
           ${kratosGlyph()}
-          <span><span class="font-bold text-hull">KRATOS</span> — orientação de segurança (SOLAS / NORMAM / MARPOL / MAIB): importância deste item na viagem costeira.</span>
+          <span><span class="font-bold text-hull">KRATOS</span> — apoio por item antes da viagem.</span>
         </button>
         <div
           class="kratos-panel mt-2 hidden rounded-md border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-800 shadow-inner"
           data-kratos-panel="${key}"
           role="region"
           aria-live="polite"
-        ></div>
+        >
+          <div class="grid gap-3">
+            <p class="m-0 flex gap-1.5"><span class="kratos-line-label shrink-0">Verificação:</span><span data-kratos-verify class="kratos-line-body min-w-0"></span></p>
+            <p class="m-0 flex gap-1.5"><span class="kratos-line-label shrink-0">Risco:</span><span data-kratos-risk class="kratos-line-body min-w-0"></span></p>
+            <p class="m-0 flex gap-1.5"><span class="kratos-line-label shrink-0">Ação:</span><span data-kratos-action class="kratos-line-body min-w-0"></span></p>
+          </div>
+        </div>
       </div>
       <input data-note="${key}" value="${escapeHtml(note)}" class="mt-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sea focus:ring-2 focus:ring-sea/20" placeholder="Observação do item" />
     </article>
@@ -533,6 +539,75 @@ async function copyMessage() {
   }
 }
 
+function parseKratosGuidance(text) {
+  const raw = (text || "").replace(/\r/g, "").trim();
+  if (!raw) return { verify: "", risk: "", action: "" };
+
+  const buckets = [[], [], [], []];
+  let section = -1;
+
+  for (const line of raw.split("\n")) {
+    const m = line.match(/^\s*(\d+)\.\s*(.*)$/);
+    if (m) {
+      section = Number(m[1]) - 1;
+      if (section >= 0 && section < 4) {
+        const rest = (m[2] || "").trim();
+        if (rest) buckets[section].push(rest);
+      }
+    } else if (section >= 0 && section < 4) {
+      const trimmed = line.trim();
+      if (trimmed) buckets[section].push(trimmed);
+    }
+  }
+
+  const join = (i) => (buckets[i] || []).join(" ").replace(/\s+/g, " ").trim();
+  const verify = join(0);
+  const risk = join(1);
+  const act = join(2);
+  const norm = join(3);
+  let action = act;
+  if (norm) action = act ? `${act} ${norm}` : norm;
+
+  if (!verify && !risk && !action) {
+    return { verify: raw, risk: "—", action: "—" };
+  }
+
+  return {
+    verify: verify || "—",
+    risk: risk || "—",
+    action: action || "—"
+  };
+}
+
+function fillKratosPanel(panel, text, { loading, error } = {}) {
+  const vEl = panel.querySelector("[data-kratos-verify]");
+  const rEl = panel.querySelector("[data-kratos-risk]");
+  const aEl = panel.querySelector("[data-kratos-action]");
+  if (!vEl || !rEl || !aEl) return;
+
+  if (loading) {
+    vEl.textContent = "Consultando KRATOS…";
+    rEl.textContent = "—";
+    aEl.textContent = "—";
+    panel.classList.add("italic", "text-slate-500");
+    return;
+  }
+
+  if (error) {
+    vEl.textContent = text || "Erro na consulta.";
+    rEl.textContent = "—";
+    aEl.textContent = "—";
+    panel.classList.remove("italic", "text-slate-500");
+    return;
+  }
+
+  const parts = parseKratosGuidance(text);
+  vEl.textContent = parts.verify;
+  rEl.textContent = parts.risk;
+  aEl.textContent = parts.action;
+  panel.classList.remove("italic", "text-slate-500");
+}
+
 function kratosGlyph() {
   return `<svg class="mt-0.5 h-4 w-4 shrink-0 text-sea" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -553,13 +628,11 @@ function onKratosToggle(button) {
 
   panel.classList.remove("hidden");
   if (state.kratos[key]) {
-    panel.textContent = state.kratos[key];
-    panel.classList.remove("italic", "text-slate-500");
+    fillKratosPanel(panel, state.kratos[key]);
     return;
   }
 
-  panel.textContent = "Consultando KRATOS...";
-  panel.classList.add("italic", "text-slate-500");
+  fillKratosPanel(panel, "", { loading: true });
   fetchKratosGuidance(key, panel);
 }
 
@@ -604,11 +677,9 @@ async function fetchKratosGuidance(key, panel) {
     }
     state.kratos[key] = data.guidance;
     persist();
-    panel.textContent = data.guidance;
-    panel.classList.remove("italic", "text-slate-500");
+    fillKratosPanel(panel, data.guidance);
   } catch (err) {
-    panel.textContent = err.message || "Falha na consulta ao KRATOS.";
-    panel.classList.remove("italic", "text-slate-500");
+    fillKratosPanel(panel, err.message || "Falha na consulta ao KRATOS.", { error: true });
   }
 }
 

@@ -51,6 +51,7 @@ function buildSystemPrompt() {
     "Tom: firme, tecnico, disciplinado — respostas curtas em portugues do Brasil, sem alarmismo nem tom epico.",
     "Checklist PRE-VIAGEM: explique por que o item protege a viagem e a tripulacao.",
     "Nomenclatura: Praca de Maquinas (nao PM); Compartimento dos Azimutais (nao Schottel).",
+    "Acoplamento propulsao: Schottel = pneumatico; Rolls Royce = hidraulico — use a marca informada no equipamento.",
     "Normas: SOLAS, NORMAM, MARPOL e licoes MAIB quando couber, sem inventar citacao.",
     "Use o glossario/persona nos trechos fornecidos; 'carga' conforme glossario."
   ].join(" ");
@@ -64,7 +65,18 @@ function buildInstructions() {
   ].join(" ");
 }
 
-function buildUserContent(sectionTitle, itemText, status, localExcerpts) {
+function formatEquipmentBlock(equipment) {
+  if (!equipment || typeof equipment !== "object") return "";
+  const lines = [];
+  if (equipment.mcp) lines.push(`MCP: ${equipment.mcp}`);
+  if (equipment.propulsion) lines.push(`Propulsores: ${equipment.propulsion}`);
+  if (equipment.generator) lines.push(`Geradores: ${equipment.generator}`);
+  if (equipment.winch) lines.push(`Guinchos de manobra: ${equipment.winch}`);
+  return lines.length ? lines.join("\n") : "";
+}
+
+function buildUserContent(sectionTitle, itemText, status, localExcerpts, equipment) {
+  const equipmentBlock = formatEquipmentBlock(equipment);
   return [
     buildInstructions(),
     "",
@@ -72,12 +84,16 @@ function buildUserContent(sectionTitle, itemText, status, localExcerpts) {
       ? "CONTEXTO (glossario/persona/normas — nao invente alem disso):\n" + localExcerpts.join("\n\n")
       : "CONTEXTO: use conhecimento tecnico de rebocador; nao invente citacao legal.",
     "",
+    equipmentBlock ? `Equipamento deste rebocador:\n${equipmentBlock}` : "",
+    equipmentBlock ? "" : null,
     `Secao: ${sectionTitle || "(sem secao)"}`,
     `Item: ${itemText}`,
     `Status: ${status || "(nao marcado)"}`,
     "",
     "Tarefa: importancia deste item para a seguranca da viagem costeira/oceânica neste rebocador."
-  ].join("\n");
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
 }
 
 async function callXaiResponses(body, apiKey) {
@@ -202,6 +218,13 @@ exports.handler = async (event) => {
     const sectionTitle = String(payload.sectionTitle || "").slice(0, 400);
     const itemText = String(payload.itemText || "").slice(0, 2200);
     const status = String(payload.status || "").slice(0, 32);
+    const equipment = payload.equipment && typeof payload.equipment === "object" ? payload.equipment : {};
+    const safeEquipment = {
+      mcp: String(equipment.mcp || "").slice(0, 64),
+      propulsion: String(equipment.propulsion || "").slice(0, 64),
+      generator: String(equipment.generator || "").slice(0, 64),
+      winch: String(equipment.winch || "").slice(0, 64)
+    };
 
     if (!itemText.trim()) {
       return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: "Texto do item ausente" }) };
@@ -210,9 +233,9 @@ exports.handler = async (event) => {
     const model = process.env.XAI_MODEL || "grok-4.3";
     const useWebSearch = process.env.KRATOS_WEB_SEARCH === "true";
 
-    const query = `${sectionTitle} ${itemText}`;
+    const query = [sectionTitle, itemText, formatEquipmentBlock(safeEquipment)].filter(Boolean).join(" ");
     const { excerpts } = retrieveKnowledge(query, { limit: 5, maxChars: 3500 });
-    const userContent = buildUserContent(sectionTitle, itemText, status, excerpts);
+    const userContent = buildUserContent(sectionTitle, itemText, status, excerpts, safeEquipment);
 
     const { guidance, mode } = await generateGuidance({
       systemPrompt: buildSystemPrompt(),

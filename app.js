@@ -1,7 +1,7 @@
 const WHATSAPP_NUMBER = "5585997737230";
 const STORAGE_KEY = "rebocador-vgm-checklist-v1";
 const KRATOS_FN = "/.netlify/functions/kratos";
-const KRATOS_PROMPT_VERSION = 11;
+const KRATOS_PROMPT_VERSION = 13;
 
 const checklist = [
   {
@@ -52,16 +52,16 @@ const checklist = [
       "Valvulas de corte de oleo e tanques de oleo diesel de servico comunicados.",
       "Trenas de sondagem integras.",
       "Visores de nivel dos tanques funcionais e integros, sem vazamentos.",
-      "Inspecao dos tanques com pasta rosa.",
+      "Inspecao dos tanques de oleo diesel com pasta rosa.",
       "Suspiros e valvulas de dreno dos tanques de contencao no conves sem obstrucoes.",
-      "Tanque Overflow vazio.",
+      "Tanque Overflow de Óleo Diesel vazio.",
       "Alarmes de baixo nivel dos tanques de servico e alto nivel Overflow operacionais."
     ]
   },
   {
     title: "Compressores de Ar",
     items: [
-      "Compressores em status operacional.",
+      "Compressores em Status Operacional.",
       "02 correias reserva disponiveis.",
       "Oleo lubrificante reserva disponivel.",
       "Purgadores automaticos, drenos de descompressao e reguladores de pressao operacionais, sem vazamentos."
@@ -211,6 +211,10 @@ const els = {
   origin: document.querySelector("#origin"),
   destination: document.querySelector("#destination"),
   vessel: document.querySelector("#vessel"),
+  mcpBrand: document.querySelector("#mcp-brand"),
+  propulsionBrand: document.querySelector("#propulsion-brand"),
+  generatorBrand: document.querySelector("#generator-brand"),
+  winchBrand: document.querySelector("#winch-brand"),
   responsible: document.querySelector("#responsible"),
   date: document.querySelector("#date"),
   time: document.querySelector("#time"),
@@ -258,6 +262,14 @@ function init() {
     });
   });
 
+  [els.mcpBrand, els.propulsionBrand, els.generatorBrand, els.winchBrand].forEach((select) => {
+    if (!select) return;
+    select.addEventListener("change", () => {
+      state.meta[select.id] = select.value;
+      persist();
+    });
+  });
+
   els.search.addEventListener("input", renderChecklist);
   els.copy.addEventListener("click", copyMessage);
   els.whatsapp.addEventListener("click", shareWhatsAppPdf);
@@ -278,6 +290,10 @@ function hydrateForm() {
   state.meta.time ||= now.toTimeString().slice(0, 5);
 
   els.vessel.value = state.meta.vessel || "";
+  if (els.mcpBrand) els.mcpBrand.value = state.meta["mcp-brand"] || "";
+  if (els.propulsionBrand) els.propulsionBrand.value = state.meta["propulsion-brand"] || "";
+  if (els.generatorBrand) els.generatorBrand.value = state.meta["generator-brand"] || "";
+  if (els.winchBrand) els.winchBrand.value = state.meta["winch-brand"] || "";
   els.origin.value = state.meta.origin || "";
   els.destination.value = state.meta.destination || "";
   els.responsible.value = state.meta.responsible || "";
@@ -445,17 +461,32 @@ function updateSummary() {
   els.total.textContent = keys.length;
 }
 
+function equipmentSummaryLines() {
+  const lines = [];
+  const mcp = state.meta["mcp-brand"];
+  const prop = state.meta["propulsion-brand"];
+  const gen = state.meta["generator-brand"];
+  const winch = state.meta["winch-brand"];
+  if (mcp) lines.push(`MCP: ${mcp}`);
+  if (prop) lines.push(`Propulsores: ${prop}`);
+  if (gen) lines.push(`Geradores: ${gen}`);
+  if (winch) lines.push(`Guinchos de manobra: ${winch}`);
+  return lines;
+}
+
 function buildMessage() {
   const keys = allKeys();
   const checked = keys.filter((key) => state.items[key]).length;
   const ok = keys.filter((key) => state.items[key] === "ok").length;
   const pending = keys.filter((key) => state.items[key] === "pending").length;
   const na = keys.filter((key) => state.items[key] === "na").length;
+  const equipment = equipmentSummaryLines();
   const lines = [
     "*Checklist Rebocador Antes da Viagem - VGM*",
     `Origem: ${state.meta.origin || "Nao informado"}`,
     `Destino: ${state.meta.destination || "Nao informado"}`,
     `Rebocador: ${state.meta.vessel || "Nao informado"}`,
+    ...(equipment.length ? equipment : []),
     `Responsavel: ${state.meta.responsible || "Nao informado"}`,
     `Data/Hora: ${state.meta.date || "--"} ${state.meta.time || "--"}`,
     `Resumo: ${checked}/${keys.length} verificados | OK: ${ok} | Pendentes: ${pending} | N/A: ${na}`,
@@ -542,7 +573,17 @@ async function fetchKratosGuidance(key, panel) {
     const res = await fetch(KRATOS_FN, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sectionTitle, itemText, status })
+      body: JSON.stringify({
+        sectionTitle,
+        itemText,
+        status,
+        equipment: {
+          mcp: state.meta["mcp-brand"] || "",
+          propulsion: state.meta["propulsion-brand"] || "",
+          generator: state.meta["generator-brand"] || "",
+          winch: state.meta["winch-brand"] || ""
+        }
+      })
     });
     let data = {};
     try {
@@ -629,16 +670,15 @@ async function buildChecklistPdfBlob() {
   };
 
   writeBlock("Checklist Rebocador Antes da Viagem - VGM", 14, true);
-  writeBlock(
-    [
-      `Origem: ${state.meta.origin || "Nao informado"}`,
-      `Destino: ${state.meta.destination || "Nao informado"}`,
-      `Rebocador: ${state.meta.vessel || "Nao informado"}`,
-      `Responsavel: ${state.meta.responsible || "Nao informado"}`,
-      `Data e hora: ${state.meta.date || "--"} ${state.meta.time || "--"}`
-    ].join("\n"),
-    10
-  );
+  const headerLines = [
+    `Origem: ${state.meta.origin || "Nao informado"}`,
+    `Destino: ${state.meta.destination || "Nao informado"}`,
+    `Rebocador: ${state.meta.vessel || "Nao informado"}`,
+    ...equipmentSummaryLines(),
+    `Responsavel: ${state.meta.responsible || "Nao informado"}`,
+    `Data e hora: ${state.meta.date || "--"} ${state.meta.time || "--"}`
+  ];
+  writeBlock(headerLines.join("\n"), 10);
 
   const keys = allKeys();
   const checked = keys.filter((k) => state.items[k]).length;
@@ -744,7 +784,15 @@ function clearChecklist() {
   state.kratos = {};
   state.meta.notes = "";
   state.meta.signature = "";
+  state.meta["mcp-brand"] = "";
+  state.meta["propulsion-brand"] = "";
+  state.meta["generator-brand"] = "";
+  state.meta["winch-brand"] = "";
   els.notes.value = "";
+  if (els.mcpBrand) els.mcpBrand.value = "";
+  if (els.propulsionBrand) els.propulsionBrand.value = "";
+  if (els.generatorBrand) els.generatorBrand.value = "";
+  if (els.winchBrand) els.winchBrand.value = "";
   persist();
   renderChecklist();
   updateSignaturePreview();

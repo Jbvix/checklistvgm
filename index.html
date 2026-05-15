@@ -235,6 +235,40 @@
           Rebocador
           <input id="vessel" class="rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20" placeholder="Nome do rebocador" />
         </label>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2" id="vessel-equipment">
+          <label class="grid gap-1 text-sm font-medium text-slate-700">
+            Motores principais (MCP)
+            <select id="mcp-brand" class="rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20">
+              <option value="">Selecione</option>
+              <option>Caterpillar</option>
+              <option>MTU</option>
+            </select>
+          </label>
+          <label class="grid gap-1 text-sm font-medium text-slate-700">
+            Propulsores
+            <select id="propulsion-brand" class="rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20">
+              <option value="">Selecione</option>
+              <option>Schottel</option>
+              <option>Rolls Royce</option>
+            </select>
+          </label>
+          <label class="grid gap-1 text-sm font-medium text-slate-700">
+            Geradores
+            <select id="generator-brand" class="rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20">
+              <option value="">Selecione</option>
+              <option>Caterpillar</option>
+              <option>Weichai</option>
+            </select>
+          </label>
+          <label class="grid gap-1 text-sm font-medium text-slate-700">
+            Guinchos de manobra
+            <select id="winch-brand" class="rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20">
+              <option value="">Selecione</option>
+              <option>Kraajweld</option>
+              <option>Ibercisa</option>
+            </select>
+          </label>
+        </div>
         <label class="grid gap-1 text-sm font-medium text-slate-700">
           Responsável
           <input id="responsible" class="rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20" placeholder="Nome de quem conferiu" />

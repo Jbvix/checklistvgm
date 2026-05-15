@@ -76,6 +76,46 @@ Combustível contaminado ou filtro saturado em MCP sem reserva suficiente pode c
 | “10 baldes de 20 L” | 200 L totais em embalagem de 20 L. |
 | “3 cargas de Racor e 3 cargas de diferenciais MCP” | Ver secao acima: tipicamente 24 Racor + 42 filtros combustivel MCP (3512 / 2 MCPs). |
 
+## Compressores de ar — status operacional
+
+**Item:** *Compressores em Status Operacional.*
+
+**Função:** manter **ar comprimido** disponível para serviços a bordo: Sand Piper pneumática, purgadores, instrumentação, acionamentos pneumáticos e, conforme a embarcação, **acoplamento do sistema de propulsão**.
+
+**Acoplamento da propulsão (conforme marca selecionada no checklist):**
+
+| Propulsor | Tipo de acoplamento | Relação com ar comprimido |
+| --- | --- | --- |
+| **Schottel** | **Pneumático** | Compressores e rede de ar são **críticos** para acoplar/desacoplar e operar funções pneumáticas do azimutal; falha de pressão ou compressor parado pode impedir manobra segura. |
+| **Rolls Royce** | **Hidráulico** | Acoplamento depende do **sistema hidráulico** (nível, bombas, filtros, vazamentos); compressores ainda importam para Sand Piper e demais consumidores de ar, mas **não** acoplam a hélice por ar. |
+
+**Verificação pré-viagem:** compressores partindo, sem alarme ativo, pressão de serviço estável, purgadores e drenos OK, correias e óleo lubrificante do compressor em reserva conforme checklist.
+
+**Por que importa na viagem:** sem ar comprimido operacional, falham intervenções de emergência (Sand Piper, esgoto com ar) e, em rebocador com **Schottel**, o **acoplamento pneumático** da propulsão; em trecho oceânico isso pode significar perda de manobra ou parada prolongada para reparo.
+
+## Configuração do rebocador (marcas no formulário)
+
+Seleção no cabeçalho do checklist (abaixo do nome do rebocador):
+
+| Campo | Opções | Uso no KRATOS |
+| --- | --- | --- |
+| Motores principais (MCP) | Caterpillar, MTU | Orientar filtros, lubrificante e proteções conforme fabricante. |
+| Propulsores | Schottel, Rolls Royce | **Acoplamento pneumático vs hidráulico** (ver tabela acima). |
+| Geradores | Caterpillar, Weichai | MCA, filtros e reservas de óleo/filtro. |
+| Guinchos de manobra | Kraajweld, Ibercisa | Bombas do guincho, desacoplamento para viagem (item MCP). |
+
+O KRATOS deve **cruzar** a marca informada com o item (ex.: compressores + Schottel → enfatizar ar para acoplamento; propulsores + óleo hidráulico → enfatizar governo e RR).
+
+## Sistema de óleo diesel — pasta rosa (sondagem com trena)
+
+**Item:** *Inspeção dos tanques de óleo diesel com pasta rosa.*
+
+**Função:** na **sondagem** do tanque com a **trena** (fita de sondagem), a **pasta rosa** (pasta aquática / water finding paste) muda de cor ao contato com **água** no fundo ou na interface óleo-água, permitindo **detectar água** no tanque de combustível antes da viagem.
+
+**Por que importa na viagem:** água no óleo diesel pode ir para Racor, filtros e MCP — falha de combustão, corrosão, parada de máquina e risco de dano ao motor em trecho oceânico. A inspeção com pasta rosa complementa nível e alarmes.
+
+**Verificação:** trena limpa e íntegra; pasta rosa dentro da validade; procedimento em cada tanque de serviço/reserva conforme rotina da embarcação; registrar se houver água e providenciar drenagem/tratamento antes da saída.
+
 ## Material de consumo e ferramentas — como orientar (bom senso)
 
 Itens da seção **Material de Consumo** e **Ferramentas** existem para **atender emergências e reparos durante a viagem**, mantendo o rebocador operacional entre portos. O KRATOS deve usar **bom senso técnico** por item:

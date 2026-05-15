@@ -1,7 +1,7 @@
 const WHATSAPP_NUMBER = "5585997737230";
 const STORAGE_KEY = "rebocador-vgm-checklist-v1";
 const KRATOS_FN = "/.netlify/functions/kratos";
-const KRATOS_PROMPT_VERSION = 18;
+const KRATOS_PROMPT_VERSION = 19;
 
 const checklist = [
   {
@@ -539,6 +539,31 @@ async function copyMessage() {
   }
 }
 
+function stripKratosLabelPrefix(text, kind) {
+  let t = String(text || "").trim();
+  if (!t || t === "—") return t;
+
+  const patterns =
+    kind === "verify"
+      ? [/^verifica[çc][aã]o\s+objetiva\s*:?\s*/i, /^verifica[çc][aã]o\s*:?\s*/i]
+      : kind === "risk"
+        ? [/^risco\s+operacional\s*:?\s*/i, /^risco\s*:?\s*/i]
+        : [/^a[cç][aã]o\s+recomendada\s*:?\s*/i, /^a[cç][aã]o\s*:?\s*/i];
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const re of patterns) {
+      const next = t.replace(re, "").trim();
+      if (next !== t) {
+        t = next;
+        changed = true;
+      }
+    }
+  }
+  return t.trim() || "—";
+}
+
 function parseKratosGuidance(text) {
   const raw = (text || "").replace(/\r/g, "").trim();
   if (!raw) return { verify: "", risk: "", action: "" };
@@ -569,13 +594,17 @@ function parseKratosGuidance(text) {
   if (norm) action = act ? `${act} ${norm}` : norm;
 
   if (!verify && !risk && !action) {
-    return { verify: raw, risk: "—", action: "—" };
+    return {
+      verify: stripKratosLabelPrefix(raw, "verify"),
+      risk: "—",
+      action: "—"
+    };
   }
 
   return {
-    verify: verify || "—",
-    risk: risk || "—",
-    action: action || "—"
+    verify: stripKratosLabelPrefix(verify || "—", "verify"),
+    risk: stripKratosLabelPrefix(risk || "—", "risk"),
+    action: stripKratosLabelPrefix(action || "—", "action")
   };
 }
 

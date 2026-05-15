@@ -63,6 +63,7 @@ function buildInstructions() {
     "2. Risco:",
     "3. Ação:",
     "Conteúdo: Verificação = o que conferir. Risco = consequência operacional direta. Ação = providência imediata.",
+    "Depois de cada rótulo numerado, escreva só o conteúdo do bloco — não repita \"Verificação:\", \"Risco:\" nem \"Ação:\" dentro do texto.",
     "Tamanho total (os 3 blocos juntos): 3 a 5 linhas; 45 a 70 palavras. Uma ou duas frases curtas por bloco. Sem markdown. Sem listas aninhadas.",
     "Normas: sem bloco separado; cite SOLAS, MARPOL ou NORMAM só se a relação for clara, dentro do Risco ou da Ação.",
     "Consumíveis e ferramentas: bom senso (tubolit, calafetar, Sand Piper, termômetro infravermelho); apeação e guarda no balanço."

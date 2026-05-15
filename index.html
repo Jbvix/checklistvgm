@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>Checklist Rebocador - VGM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/pixi.js@8.8.1/dist/pixi.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              hull: "#12313f",
+              sea: "#0f766e",
+              deck: "#f2f7f4",
+              alert: "#c2410c"
+            }
+          }
+        }
+      };
+    </script>
+    <style>
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        background: #f2f7f4;
+      }
+
+      body.dark-mode {
+        background: #0b1720;
+        color: #e2e8f0;
+      }
+
+      body.dark-mode main,
+      body.dark-mode .theme-surface {
+        color: #e2e8f0;
+      }
+
+      body.dark-mode .bg-white,
+      body.dark-mode .bg-white\/95 {
+        background-color: rgba(15, 23, 42, 0.96) !important;
+      }
+
+      body.dark-mode .bg-deck\/95 {
+        background-color: rgba(11, 23, 32, 0.96) !important;
+      }
+
+      body.dark-mode .border-slate-200,
+      body.dark-mode .border-slate-300,
+      body.dark-mode .border-slate-100 {
+        border-color: #334155 !important;
+      }
+
+      body.dark-mode .text-slate-950,
+      body.dark-mode .text-slate-900,
+      body.dark-mode .text-slate-800,
+      body.dark-mode .text-slate-700 {
+        color: #e2e8f0 !important;
+      }
+
+      body.dark-mode .text-slate-500 {
+        color: #94a3b8 !important;
+      }
+
+      body.dark-mode input,
+      body.dark-mode select,
+      body.dark-mode textarea {
+        background: #111827;
+        border-color: #334155;
+        color: #e2e8f0;
+      }
+
+      body.dark-mode input::placeholder,
+      body.dark-mode textarea::placeholder {
+        color: #94a3b8;
+      }
+
+      body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator,
+      body.dark-mode input[type="time"]::-webkit-calendar-picker-indicator {
+        filter: invert(1) brightness(1.8);
+        opacity: 0.9;
+      }
+
+      body.dark-mode .bg-slate-100 {
+        background-color: #1e293b !important;
+      }
+
+      body.dark-mode dialog {
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+
+      body.dark-mode dialog .border-slate-200,
+      body.dark-mode dialog .border-slate-300 {
+        border-color: #334155 !important;
+      }
+
+      .status-btn[aria-pressed="true"] {
+        color: #fff;
+      }
+
+      .status-ok[aria-pressed="true"] {
+        background: #0f766e;
+        border-color: #0f766e;
+      }
+
+      .status-pending[aria-pressed="true"] {
+        background: #c2410c;
+        border-color: #c2410c;
+      }
+
+      .status-na[aria-pressed="true"] {
+        background: #475569;
+        border-color: #475569;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen text-slate-900 antialiased">
+    <header class="relative overflow-hidden bg-hull text-white">
+      <div id="wave-canvas" class="absolute inset-0 opacity-70"></div>
+      <div class="relative mx-auto max-w-5xl px-4 pb-5 pt-5">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-widest text-teal-100">VIAGEM SFS CFM JOSSIAN BRITO</p>
+            <h1 class="mt-2 text-2xl font-bold leading-tight">Checklist do Rebocador Antes da Viagem</h1>
+          </div>
+          <div class="rounded-md border border-white/20 bg-white/10 px-3 py-2 text-right">
+            <p id="progress-percent" class="text-2xl font-bold">0%</p>
+            <p class="text-xs text-teal-50">concluido</p>
+          </div>
+        </div>
+
+        <div class="mt-5 grid grid-cols-3 gap-2 text-center">
+          <div class="rounded-md bg-white/12 p-2">
+            <p id="count-ok" class="text-lg font-bold">0</p>
+            <p class="text-xs text-teal-50">OK</p>
+          </div>
+          <div class="rounded-md bg-white/12 p-2">
+            <p id="count-pending" class="text-lg font-bold">0</p>
+            <p class="text-xs text-teal-50">Pendentes</p>
+          </div>
+          <div class="rounded-md bg-white/12 p-2">
+            <p id="count-total" class="text-lg font-bold">0</p>
+            <p class="text-xs text-teal-50">Itens</p>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <div class="h-3 overflow-hidden rounded-full bg-white/20" role="progressbar" aria-label="Progresso do checklist" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div id="progress-bar" class="h-full w-0 rounded-full bg-teal-300 transition-all duration-300"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-5xl px-4 pb-32 pt-4">
+      <section class="grid gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+        <div>
+          <p class="text-sm font-bold text-slate-950">Viagem Origem Destino Filiais</p>
+          <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label class="grid gap-1 text-sm font-medium text-slate-700">
+              Origem
+              <select id="origin" class="rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20">
+                <option value="">Selecione a origem</option>
+                <option>Santana</option>
+                <option>Vila do Conde</option>
+                <option>São Luís</option>
+                <option>Pecém</option>
+                <option>Suape</option>
+                <option>Salvador</option>
+                <option>Vitória</option>
+                <option>Rio de Janeiro</option>
+                <option>Sepetiba</option>
+                <option>Angra dos Reis</option>
+                <option>Santos</option>
+                <option>Paranaguá</option>
+                <option>São Francisco do Sul</option>
+                <option>Imbituba</option>
+                <option>Itajaí</option>
+                <option>Rio Grande</option>
+              </select>
+            </label>
+            <label class="grid gap-1 text-sm font-medium text-slate-700">
+              Destino
+              <select id="destination" class="rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20">
+                <option value="">Selecione o destino</option>
+                <option>Santana</option>
+                <option>Vila do Conde</option>
+                <option>São Luís</option>
+                <option>Pecém</option>
+                <option>Suape</option>
+                <option>Salvador</option>
+                <option>Vitória</option>
+                <option>Rio de Janeiro</option>
+                <option>Sepetiba</option>
+                <option>Angra dos Reis</option>
+                <option>Santos</option>
+                <option>Paranaguá</option>
+                <option>São Francisco do Sul</option>
+                <option>Imbituba</option>
+                <option>Itajaí</option>
+                <option>Rio Grande</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <label class="grid gap-1 text-sm font-medium text-slate-700">
+          Rebocador
+          <input id="vessel" class="rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20" placeholder="Nome do rebocador" />
+        </label>
+        <label class="grid gap-1 text-sm font-medium text-slate-700">
+          Responsavel
+          <input id="responsible" class="rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20" placeholder="Nome de quem conferiu" />
+        </label>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label class="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
+            Data
+            <input id="date" type="date" class="w-full min-w-0 rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20" />
+          </label>
+          <label class="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
+            Hora
+            <input id="time" type="time" class="w-full min-w-0 rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20" />
+          </label>
+        </div>
+      </section>
+
+      <section class="sticky top-0 z-20 -mx-4 mt-4 border-y border-slate-200 bg-deck/95 px-4 py-3 backdrop-blur">
+        <div class="flex gap-2">
+          <input id="search" class="min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20" placeholder="Buscar item ou secao" />
+          <button id="theme-toggle" class="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700" aria-label="Alternar tema claro e escuro">
+            <svg class="h-4 w-4 theme-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 4V2M12 22v-2M4 12H2M22 12h-2M5 5 3.6 3.6M20.4 20.4 19 19M19 5l1.4-1.4M3.6 20.4 5 19M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <svg class="hidden h-4 w-4 theme-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 7 7 0 1 0 20 15.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <button id="expand-all" class="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M8 10l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Abrir</span>
+          </button>
+        </div>
+        <div id="section-tabs" class="mt-3 flex gap-2 overflow-x-auto pb-1"></div>
+        <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-label="Progresso do preenchimento" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div id="progress-bar-sticky" class="h-full w-0 rounded-full bg-sea transition-all duration-300"></div>
+        </div>
+      </section>
+
+      <section id="checklist" class="mt-4 grid gap-4"></section>
+
+      <section class="mt-4 rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+        <label class="grid gap-1 text-sm font-medium text-slate-700">
+          Observacoes gerais
+          <textarea id="notes" rows="4" class="rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-sea focus:ring-2 focus:ring-sea/20" placeholder="Registre pendencias, materiais faltantes ou observacoes da equipe."></textarea>
+        </label>
+      </section>
+
+      <section class="mt-4 rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base font-bold text-slate-950">Assinatura digital</h2>
+            <p id="signature-status" class="mt-1 text-sm text-slate-500">Nenhuma assinatura registrada.</p>
+          </div>
+          <button id="open-signature" class="inline-flex items-center justify-center gap-2 rounded-md bg-hull px-4 py-3 text-sm font-bold text-white">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 20h16M5 16l2.5-.5L18.2 4.8a1.7 1.7 0 0 0-2.4-2.4L5.1 13.1 5 16z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Assinar</span>
+          </button>
+        </div>
+        <img id="signature-preview" class="mt-3 hidden h-24 w-full rounded-md border border-slate-200 bg-white object-contain" alt="Assinatura digital salva" />
+      </section>
+    </main>
+
+    <button id="back-to-top" class="fixed bottom-24 right-4 z-30 hidden rounded-full bg-hull p-3 text-white shadow-lg" aria-label="Ir para inicio">
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+
+    <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur">
+      <div class="mx-auto grid max-w-5xl grid-cols-3 gap-2">
+        <button id="clear" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-md border border-slate-300 px-2 py-3 text-center text-sm font-semibold leading-tight text-slate-700">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Limpar</span>
+        </button>
+        <button id="copy" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-md border border-sea px-2 py-3 text-center text-sm font-semibold leading-tight text-sea">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M8 8h10v12H8zM6 16H4V4h12v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Copiar</span>
+        </button>
+        <a id="whatsapp" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-md border border-sea bg-sea px-2 py-3 text-center text-sm font-bold leading-tight text-white" target="_blank" rel="noopener">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M20 11.6a8 8 0 0 1-11.8 7l-3.2.9.9-3.1A8 8 0 1 1 20 11.6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M9.5 8.8c.2-.4.4-.5.7-.5h.6c.2 0 .4.1.5.4l.6 1.4c.1.3 0 .5-.2.7l-.4.4c.5.9 1.2 1.6 2.1 2.1l.4-.4c.2-.2.5-.3.8-.2l1.3.6c.3.1.4.3.4.6v.6c0 .3-.1.5-.4.7-.4.2-.9.3-1.4.2-2.9-.4-5.1-2.6-5.5-5.5-.1-.4 0-.9.2-1.1z" fill="currentColor" />
+          </svg>
+          <span>Enviar WhatsApp</span>
+        </a>
+      </div>
+    </nav>
+
+    <div id="toast" class="pointer-events-none fixed bottom-24 left-1/2 z-40 hidden -translate-x-1/2 rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-lg"></div>
+
+    <dialog id="signature-modal" class="w-[calc(100%-2rem)] max-w-2xl rounded-md border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-950/70">
+      <div class="border-b border-slate-200 p-4">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-lg font-bold">Assinatura digital</h2>
+          <button id="close-signature" class="rounded-md border border-slate-300 p-2 text-slate-700" aria-label="Fechar assinatura">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="grid gap-3 p-4">
+        <canvas id="signature-pad" class="h-64 w-full touch-none rounded-md border border-slate-300 bg-white"></canvas>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="clear-signature" class="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Limpar</span>
+          </button>
+          <button id="save-signature" class="inline-flex items-center justify-center gap-2 rounded-md bg-sea px-4 py-3 text-sm font-bold text-white">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Salvar</span>
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>

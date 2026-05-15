@@ -244,7 +244,77 @@ const els = {
 
 init();
 
+function initSplash() {
+  const root = document.getElementById("app-splash");
+  if (!root) return;
+
+  const bar = document.getElementById("splash-progress-fill");
+  const pctEl = document.getElementById("splash-pct");
+  const stepEl = document.getElementById("splash-step");
+  const btnStart = document.getElementById("splash-start");
+  const btnGuide = document.getElementById("splash-orientation");
+  const guideDialog = document.getElementById("splash-guide-dialog");
+  const guideClose = document.getElementById("splash-guide-close");
+
+  const steps = [
+    "Verificando recursos do navegador…",
+    "Carregando estrutura do checklist…",
+    "Recuperando estado guardado localmente…",
+    "Preparando módulo KRATOS…",
+    "Sincronizando interface de viagem…",
+    "Sistema pronto. Aguarde ou toque em Iniciar."
+  ];
+  const duration = 15000;
+  const t0 = performance.now();
+  let raf = 0;
+  let stepIdx = 0;
+  const stepEvery = Math.max(800, duration / (steps.length - 1));
+
+  const stepTimer = window.setInterval(() => {
+    if (stepIdx < steps.length - 1) {
+      stepIdx += 1;
+      if (stepEl) stepEl.textContent = steps[stepIdx];
+    }
+  }, stepEvery);
+
+  function tick(now) {
+    const elapsed = now - t0;
+    const p = Math.min(100, (elapsed / duration) * 100);
+    if (bar) bar.style.width = `${p}%`;
+    if (pctEl) pctEl.textContent = `${Math.round(p)}%`;
+    if (elapsed < duration) raf = requestAnimationFrame(tick);
+  }
+  raf = requestAnimationFrame(tick);
+
+  let autoTimer;
+  function dismissSplash() {
+    if (root.dataset.dismissed === "1") return;
+    root.dataset.dismissed = "1";
+    window.clearInterval(stepTimer);
+    if (autoTimer) window.clearTimeout(autoTimer);
+    cancelAnimationFrame(raf);
+    root.classList.add("splash-leaving");
+    root.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("splash-active");
+    window.setTimeout(() => {
+      root.style.display = "none";
+    }, 480);
+  }
+
+  autoTimer = window.setTimeout(dismissSplash, duration);
+
+  btnStart?.addEventListener("click", dismissSplash);
+  btnGuide?.addEventListener("click", () => guideDialog?.showModal());
+  guideClose?.addEventListener("click", () => guideDialog?.close());
+  guideDialog?.addEventListener("click", (e) => {
+    if (e.target === guideDialog) guideDialog.close();
+  });
+
+  if (stepEl) stepEl.textContent = steps[0];
+}
+
 function init() {
+  initSplash();
   applyTheme();
   hydrateForm();
   renderTabs();

@@ -94,6 +94,24 @@
         color: #e2e8f0;
       }
 
+      body.dark-mode #splash-guide-dialog {
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+
+      body.dark-mode #splash-guide-dialog .text-slate-700 {
+        color: #cbd5e1 !important;
+      }
+
+      body.dark-mode #splash-guide-dialog code {
+        background: #1e293b !important;
+        color: #e2e8f0;
+      }
+
+      body.dark-mode #splash-guide-dialog .text-slate-500 {
+        color: #94a3b8 !important;
+      }
+
       body.dark-mode dialog .border-slate-200,
       body.dark-mode dialog .border-slate-300 {
         border-color: #334155 !important;
@@ -176,7 +194,7 @@
       aria-labelledby="splash-title"
       aria-describedby="splash-step"
     >
-      <div id="app-splash" class="flex flex-1 flex-col justify-center px-5 py-8 sm:px-8">
+      <div class="flex flex-1 flex-col justify-center px-5 py-8 sm:px-8">
         <div class="mx-auto w-full max-w-lg text-center">
           <p class="text-xs font-semibold uppercase tracking-[0.2em] text-teal-200/90">Checklist VGM</p>
           <h1 id="splash-title" class="mt-2 text-2xl font-bold leading-tight text-white sm:text-3xl">Rebocador — pré-viagem</h1>
@@ -471,6 +489,33 @@
             <span>Salvar</span>
           </button>
         </div>
+      </div>
+    </dialog>
+
+    <dialog id="splash-guide-dialog" class="z-[110] w-[calc(100%-2rem)] max-w-lg rounded-lg border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-950/75">
+      <div class="border-b border-slate-200 bg-hull px-4 py-3 text-white">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-lg font-bold">Orientação ao usuário</h2>
+          <button type="button" id="splash-guide-close" class="rounded-md border border-white/30 p-2 text-white hover:bg-white/10" aria-label="Fechar">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="max-h-[70vh] overflow-y-auto p-4 text-sm leading-relaxed text-slate-700">
+        <ul class="list-disc space-y-3 pl-4">
+          <li>Preencha origem, destino, rebocador, equipamentos e responsável antes de marcar os itens.</li>
+          <li>Use <strong>OK</strong>, <strong>Pendente</strong> ou <strong>N/A</strong> em cada item; pendências aparecem no resumo e na mensagem copiada.</li>
+          <li>
+            <strong>KRATOS</strong> oferece orientação técnica por item (Verificação, Risco, Ação). Abra o painel no item desejado. Requer site publicado (Netlify), não funciona em arquivo
+            <code class="rounded bg-slate-100 px-1">file://</code>.
+          </li>
+          <li>Registre observações por item e observações gerais quando necessário.</li>
+          <li>Assine digitalmente para gerar o PDF e enviar pelo WhatsApp (compartilhamento ou download + anexo).</li>
+          <li>Os dados ficam salvos neste aparelho (navegador). O botão Limpar apaga o checklist guardado.</li>
+        </ul>
+        <p class="mt-4 text-xs text-slate-500">O assistente não substitui comandante, chefe de máquinas, armador, classificadora ou autoridade marítima.</p>
       </div>
     </dialog>
 

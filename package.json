@@ -1,0 +1,11 @@
+{
+  "name": "checklistvgm",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:knowledge": "node scripts/build-knowledge.mjs"
+  },
+  "devDependencies": {
+    "pdf-parse": "^1.1.1"
+  }
+}

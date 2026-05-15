@@ -1,6 +1,12 @@
-const XAI_URL = "https://api.x.ai/v1/chat/completions";
+const { retrieveKnowledge } = require("./lib/knowledge");
 
-/** Extrai mensagem segura do corpo JSON de erro da xAI (para o usuario diagnosticar). */
+const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses";
+
+const MAIB_URL = "https://www.gov.uk/government/organisations/marine-accident-investigation-branch";
+
+/** Dominios prioritarios para busca (max 5 na API xAI). */
+const WEB_SEARCH_DOMAINS = ["gov.uk", "marinha.mil.br", "imo.org", "gov.br", "www6.mar.mil.br"];
+
 function parseXaiErrorMessage(raw) {
   if (!raw || typeof raw !== "string") return "";
   try {
@@ -11,6 +17,49 @@ function parseXaiErrorMessage(raw) {
   } catch {
     return "";
   }
+}
+
+function extractResponseText(data) {
+  const parts = [];
+  for (const item of data?.output || []) {
+    if (item.type !== "message" || !Array.isArray(item.content)) continue;
+    for (const block of item.content) {
+      if (block.type === "output_text" && block.text) {
+        parts.push(block.text);
+      }
+    }
+  }
+  return parts.join("\n").trim();
+}
+
+function buildSystemPrompt() {
+  return [
+    "Voce e KRATOS, assistente de seguranca de maquinas para tripulacao de REBOCADOR PORTUARIO.",
+    "",
+    "CONTEXTO OPERACIONAL (fixo):",
+    "- Embarcacao: rebocador portuario (harbour/port tug), nao navio de longo curso generico.",
+    "- Checklist pre-viagem para deslocamento COSTEIRO entre portos, com trechos de navegacao OCEANICA entre bases/portos brasileiros.",
+    "- Foco: disponibilidade de propulsao e auxiliares, casa de maquinas compacta, regimes variados, riscos de incendio, alagamento, poluicao e parada de maquina em condicao de mar.",
+    "",
+    "REFERENCIAS NORMATIVAS:",
+    "- Base local em PDF (docs/): SOLAS, NORMAM 201 e MARPOL Anexo I — trechos relevantes podem ser fornecidos no contexto; priorize esses trechos e nao contradiga o texto fornecido.",
+    "- Complemento: busca na web (MAIB, Marinha, IMO) quando necessario.",
+    "- Licoes aprendidas MAIB: " + MAIB_URL,
+  ].join("\n");
+}
+
+function buildInstructions() {
+  return [
+    "REGRAS DE RESPOSTA (obrigatorias):",
+    "1. Portugues do Brasil; 2 a 4 frases curtas; sem markdown, sem listas numeradas.",
+    "2. Foco exclusivo em SEGURANCA da viagem, continuidade operacional e protecao da tripulacao — sem dramatizar nem alarmismo.",
+    "3. ANTI-ALUCINACAO: nunca invente numero de artigo, capitulo, resolucao, data de norma ou citacao de relatorio MAIB. Se nao tiver certeza apos busca, diga para conferir o texto oficial (SOLAS/NORMAM/MARPOL) ou o relatorio MAIB correspondente, sem citar numero falso.",
+    "4. Referencie normas pelo NOME (SOLAS, NORMAM, MARPOL) e pelo TEMA; cite artigo ou item SOMENTE se constar explicitamente nos trechos da base local fornecidos abaixo.",
+    "5. Quando couber, mencione licoes do MAIB de forma generica, sem inventar nome de navio ou data de acidente.",
+    "6. Use trechos da base local como fonte principal; use busca na web para MAIB ou atualizacoes oficiais quando os trechos locais forem insuficientes.",
+    "7. Itens sobre dalas/trapos/agua oleosa na PM: material solto pode obstruir esgotamento e agravar alagamento e risco de incendio — explique de forma proporcional ao risco, sem exageros.",
+    "8. Encerre com acao pratica ligada ao item do checklist (verificar, confirmar, corrigir antes da saida).",
+  ].join("\n");
 }
 
 const corsHeaders = {
@@ -39,7 +88,7 @@ exports.handler = async (event) => {
       headers: corsHeaders,
       body: JSON.stringify({
         error:
-          "XAI_API_KEY nao chegou a esta funcao. Confirme o nome exato na Netlify e dispare um novo deploy (Deploys > Trigger deploy)."
+          "XAI_API_KEY nao chegou a esta funcao. Confirme o nome na Netlify e dispare um novo deploy."
       })
     };
   }
@@ -60,51 +109,60 @@ exports.handler = async (event) => {
   }
 
   const model = process.env.XAI_MODEL || "grok-4.3";
+  const webSearchEnabled = process.env.KRATOS_WEB_SEARCH !== "false";
 
-  const MAIB_URL = "https://www.gov.uk/government/organisations/marine-accident-investigation-branch";
+  const query = `${sectionTitle} ${itemText}`;
+  const { excerpts: localExcerpts } = retrieveKnowledge(query, { limit: 4, maxChars: 3000 });
 
-  const system = [
-    "Voce e KRATOS, chefe de maquinas de rebocador portuario com ampla experiencia em propulsao, auxiliares e seguranca de maquinas.",
-    "Contexto fixo: o checklist refere-se sempre a um REBOCADOR PORTUARIO (rebocador de porto/harbour tug) em operacao de apoio a manobras, reboque e deslocamentos costeiros ou entre bases — nao trate como navio de longo curso generico.",
-    "Em cada resposta, conecte o item ao ambiente do rebocador portuario (espacos de maquinas compactos, regimes variados de maquina, manobras frequentes, risco de contaminacao e incendio, disponibilidade imediata de propulsao e auxiliares).",
-    "Quando o item envolver dalas, trapos, detritos ou escoamento de agua oleosa/residuos na praca de maquinas, explique que material solto pode obstruir bombas, cestos, sumps ou linhas de esgoto e dificultar o esgotamento de emergencia em alagamento da PM, alem de acumular liquido inflamavel e elevar risco de incendio ou contaminacao.",
-    "Quando fizer sentido, oriente o usuario a cruzar boas praticas com fontes oficiais: normas e publicacoes da Marinha do Brasil aplicaveis a embarcacao mercante/rebocador no Brasil (consultar sempre o texto vigente no portal oficial da Marinha) e, para aprendizado com investigacoes e boletins de seguranca, o MAIB (Marine Accident Investigation Branch, Reino Unido): " +
-      MAIB_URL +
-      " — nao invente numero de artigo, resolucao ou codigo; indique a consulta as fontes para detalhe normativo.",
-    "Responda sempre em portugues do Brasil, em 2 a 4 frases curtas, sem listas numeradas nem markdown.",
-    "Explique por que o item do checklist pre-viagem importa para a seguranca da viagem, continuidade operacional e integridade do navio e da tripulacao.",
-    "Seja direto e tecnico. Relacione a riscos reais (ex.: incendio, parada de maquina, poluicao, blackout, falha de esgotamento em emergencia) quando fizer sentido.",
-    "Se o usuario ainda nao marcou status, oriente com base no item em si."
-  ].join(" ");
-
-  const userMsg = [
-    "Embarcacao: rebocador portuario (contexto obrigatorio para a sua resposta).",
-    `Secao: ${sectionTitle || "(sem secao)"}`,
-    `Item do checklist: ${itemText}`,
-    `Status assinalado pelo usuario (ok / pending / na ou vazio): ${status || "(nao marcado)"}`,
-    "Explique a importancia deste item para a seguranca da viagem neste rebocador portuario. Se couber em uma frase final, lembre de verificar normas da Marinha do Brasil (oficial) e relatorios/boletins do MAIB no site indicado no seu contexto, sem inventar citacao legal."
+  const userContent = [
+    buildInstructions(),
+    "",
+    localExcerpts.length
+      ? "TRECHOS DA BASE LOCAL (SOLAS / NORMAM / MARPOL — use como referencia; nao invente alem disso):\n" +
+        localExcerpts.join("\n\n")
+      : "TRECHOS DA BASE LOCAL: indice ainda nao gerado ou sem correspondencia para este item; use busca na web com cautela.",
+    "",
+    "Dados do item:",
+    "- Embarcacao: rebocador portuario em viagem costeira entre portos (navegacao oceanica nos trechos de deslocamento).",
+    `- Secao: ${sectionTitle || "(sem secao)"}`,
+    `- Item do checklist: ${itemText}`,
+    `- Status do usuario (ok / pending / na ou vazio): ${status || "(nao marcado)"}`,
+    "",
+    "Tarefa: explique por que este item importa para a seguranca desta viagem. Use busca na web se precisar de apoio em MAIB, SOLAS, NORMAM ou MARPOL; nao invente citacoes."
   ].join("\n");
 
-  const res = await fetch(XAI_URL, {
+  const body = {
+    model,
+    store: false,
+    temperature: 0.22,
+    max_output_tokens: 520,
+    input: [
+      { role: "system", content: buildSystemPrompt() },
+      { role: "user", content: userContent }
+    ]
+  };
+
+  if (webSearchEnabled) {
+    body.tools = [
+      {
+        type: "web_search",
+        filters: { allowed_domains: WEB_SEARCH_DOMAINS }
+      }
+    ];
+  }
+
+  const res = await fetch(XAI_RESPONSES_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${process.env.XAI_API_KEY}`
     },
-    body: JSON.stringify({
-      model,
-      temperature: 0.35,
-      max_tokens: 480,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: userMsg }
-      ]
-    })
+    body: JSON.stringify(body)
   });
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
-    console.error("xAI HTTP", res.status, errText.slice(0, 800));
+    console.error("xAI Responses HTTP", res.status, errText.slice(0, 800));
     const apiHint = parseXaiErrorMessage(errText);
     const fallback =
       res.status === 401 || res.status === 403
@@ -119,7 +177,7 @@ exports.handler = async (event) => {
   }
 
   const data = await res.json();
-  const guidance = data.choices?.[0]?.message?.content?.trim();
+  const guidance = extractResponseText(data);
 
   if (!guidance) {
     return {
@@ -129,5 +187,9 @@ exports.handler = async (event) => {
     };
   }
 
-  return { statusCode: 200, headers: corsHeaders, body: JSON.stringify({ guidance }) };
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({ guidance, webSearch: webSearchEnabled })
+  };
 };

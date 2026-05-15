@@ -1,10 +1,13 @@
 [build]
+  # Se docs/*.pdf estiverem no repo, regenera o indice; senao usa knowledge-index.json commitado.
+  command = "if [ -f docs/normam-201.pdf ]; then npm ci && npm run build:knowledge; else echo 'Indice KRATOS: usando arquivo em netlify/functions/data/'; fi"
   publish = "."
   functions = "netlify/functions"
 
 # XAI_API_KEY — variavel no painel Netlify (Site > Environment variables).
 # Apos criar ou alterar variaveis, faca um novo deploy para as funcoes enxergarem a chave.
-# Opcional: XAI_MODEL (padrao grok-4.3; modelos antigos podem falhar na API).
+# Opcional: XAI_MODEL (padrao grok-4.3). KRATOS_WEB_SEARCH=false desliga busca na web.
+# KRATOS usa API Responses da xAI com web_search (MAIB, Marinha, IMO, gov.br).
 
 [[headers]]
   for = "/*"

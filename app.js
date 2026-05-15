@@ -1,6 +1,7 @@
 const WHATSAPP_NUMBER = "5585997737230";
 const STORAGE_KEY = "rebocador-vgm-checklist-v1";
 const KRATOS_FN = "/.netlify/functions/kratos";
+const KRATOS_PROMPT_VERSION = 3;
 
 const checklist = [
   {
@@ -386,7 +387,7 @@ function renderItem(item, sectionIndex, itemIndex) {
           data-kratos-key="${key}"
         >
           ${kratosGlyph()}
-          <span><span class="font-bold text-hull">KRATOS</span> — orientacao de chefe de maquinas: por que este item importa para a seguranca da viagem?</span>
+          <span><span class="font-bold text-hull">KRATOS</span> — orientacao de seguranca (SOLAS / NORMAM / MARPOL / MAIB): importancia deste item na viagem costeira.</span>
         </button>
         <div
           class="kratos-panel mt-2 hidden rounded-md border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-800 shadow-inner"
@@ -760,6 +761,7 @@ function toggleBackToTop() {
 }
 
 function persist() {
+  state.kratosVersion = KRATOS_PROMPT_VERSION;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
@@ -767,11 +769,12 @@ function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (saved) {
+      const kratosStale = saved.kratosVersion !== KRATOS_PROMPT_VERSION;
       return {
         meta: saved.meta || {},
         items: saved.items || {},
         notes: saved.notes || {},
-        kratos: saved.kratos || {}
+        kratos: kratosStale ? {} : saved.kratos || {}
       };
     }
   } catch {
